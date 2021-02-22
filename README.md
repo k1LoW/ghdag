@@ -11,3 +11,11 @@
 | `GITHUB_API_URL` | The GitHub API URL | `https://api.github.com` |
 | `SLACK_API_TOKEN` | A Slack OAuth access token | - |
 | `SLACK_WEBHOOK_URL` | A Slack incoming webhook URL | - |
+| `SLACK_CHANNEL` | A notify Slack channel | - |
+
+### Required scope of `SLACK_API_TOKEN`
+
+- `channel:read`
+- `chat.write`
+- `chat.write.public`
+- `users.read`
