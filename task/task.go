@@ -89,7 +89,7 @@ func (t *Task) CheckOperationSyntax(o *Operation) (bool, []string) {
 	}
 	if c != 1 {
 		valid = false
-		errors = append(errors, fmt.Sprintf("%sinvalid operation (want 1 definition, got %d)", prefix, c))
+		errors = append(errors, fmt.Sprintf("%sinvalid `%s:` operation (want 1 definition, got %d)", prefix, o.Type, c))
 	}
 	return valid, errors
 }
@@ -110,14 +110,4 @@ func (tasks Tasks) CheckSyntax() (bool, []string) {
 		ids[t.Id] = struct{}{}
 	}
 	return valid, errors
-}
-
-type Operation struct {
-	Run       string   `yaml:"run,omitempty"`
-	Labels    []string `yaml:"labels,omitempty"`
-	Assignees []string `yaml:"assignees,omitempty"`
-	Comment   string   `yaml:"comment,omitempty"`
-	Action    string   `yaml:"action,omitempty"`
-	Notify    string   `yaml:"notify,omitempty"`
-	Next      []string `yaml:"next,omitempty"`
 }
