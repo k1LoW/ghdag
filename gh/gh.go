@@ -3,10 +3,12 @@ package gh
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -143,6 +145,19 @@ func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) er
 		}
 	}
 	as = unique(as)
+
+	if os.Getenv("GITHUB_ASSIGNEES_SAMPLE") != "" {
+		sn, err := strconv.Atoi(os.Getenv("GITHUB_ASSIGNEES_SAMPLE"))
+		if err != nil {
+			return err
+		}
+		if len(as) < sn {
+			rand.Seed(time.Now().UnixNano())
+			rand.Shuffle(len(as), func(i, j int) { as[i], as[j] = as[j], as[i] })
+			as = as[:sn]
+		}
+	}
+
 	_, _, err := c.client.Issues.Edit(ctx, c.owner, c.repo, n, &github.IssueRequest{
 		Assignees: &as,
 	})
