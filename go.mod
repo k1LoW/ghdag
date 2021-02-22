@@ -9,6 +9,7 @@ require (
 	github.com/google/martian/v3 v3.1.0
 	github.com/k1LoW/exec v0.1.1
 	github.com/pkg/errors v0.8.1
+	github.com/rs/zerolog v1.20.0
 	github.com/slack-go/slack v0.8.1
 	github.com/spf13/cobra v1.1.3
 )

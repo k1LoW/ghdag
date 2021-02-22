@@ -71,6 +71,16 @@ func (t *Target) Labels() []string {
 
 type Targets map[int]*Target
 
+func (targets Targets) MaxDigits() int {
+	digits := 0
+	for _, t := range targets {
+		if digits < len(fmt.Sprintf("%d", t.Number())) {
+			digits = len(fmt.Sprintf("%d", t.Number()))
+		}
+	}
+	return digits
+}
+
 func NewTarget(i *github.Issue) *Target {
 	return &Target{
 		i: i,
