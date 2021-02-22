@@ -48,7 +48,7 @@ func (c *Client) PostMessage(ctx context.Context, m string) error {
 
 func (c *Client) postMessage(ctx context.Context, m string) error {
 	if os.Getenv("SLACK_CHANNEL") == "" {
-		return errors.New("not found environment for Slack: SLACK_NOTIFY_CHANNEL")
+		return errors.New("not found environment for Slack: SLACK_CHANNEL")
 	}
 	channel := os.Getenv("SLACK_CHANNEL")
 	channelID, err := c.getChannelIDByName(ctx, channel)

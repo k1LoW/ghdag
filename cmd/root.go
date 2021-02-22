@@ -22,13 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 )
-
-var l *log.Logger
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -46,6 +43,4 @@ func Execute() {
 	}
 }
 
-func init() {
-	l = log.New(os.Stdout, "", log.LstdFlags)
-}
+func init() {}

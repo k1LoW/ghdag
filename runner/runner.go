@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -14,14 +13,16 @@ import (
 	"github.com/k1LoW/ghdag/gh"
 	"github.com/k1LoW/ghdag/slk"
 	"github.com/k1LoW/ghdag/task"
+	"github.com/rs/zerolog/log"
 )
 
 type Runner struct {
-	config *config.Config
-	github *gh.Client
-	slack  *slk.Client
-	env    []string
-	mu     sync.Mutex
+	config    *config.Config
+	github    *gh.Client
+	slack     *slk.Client
+	env       []string
+	mu        sync.Mutex
+	logPrefix string
 }
 
 func New(c *config.Config) (*Runner, error) {
@@ -34,10 +35,11 @@ func New(c *config.Config) (*Runner, error) {
 		return nil, err
 	}
 	return &Runner{
-		config: c,
-		github: gc,
-		slack:  sc,
-		env:    os.Environ(),
+		config:    c,
+		github:    gc,
+		slack:     sc,
+		env:       os.Environ(),
+		logPrefix: "",
 	}, nil
 }
 
@@ -48,15 +50,18 @@ type TaskQueue struct {
 }
 
 func (r *Runner) Run(ctx context.Context) error {
-	log.Println("session start")
-	log.Printf("fetch open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY"))
+	r.logPrefix = ""
+	r.log("Start session")
+	r.log(fmt.Sprintf("Fetch open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
 	targets, err := r.github.FetchTargets(ctx)
 	if err != nil {
 		return err
 	}
-	log.Printf("%d issues/pull requests are fetched\n", len(targets))
+	maxDigits := targets.MaxDigits()
+	r.log(fmt.Sprintf("%d issues and pull requests are fetched", len(targets)))
 	tasks := r.config.Tasks
-	log.Printf("%d tasks are loaded\n", len(tasks))
+	r.log(fmt.Sprintf("%d tasks are loaded", len(tasks)))
+	maxLength := tasks.MaxLengthID()
 
 	q := make(chan TaskQueue, len(tasks)*len(targets))
 	for _, i := range targets {
@@ -79,40 +84,45 @@ L:
 			break
 		}
 
-		prefix := fmt.Sprintf("[#%d <- %s] ", tq.target.Number(), tq.task.Id)
+		n := tq.target.Number()
+		id := tq.task.Id
+		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
 
 		if tq.task.If != "" {
 			do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), tq.target.Dump())
 			if err != nil {
-				log.Printf("%s%s\n", prefix, err)
+				r.errlog(fmt.Sprintf("%s", err))
 				continue L
 			}
 			if !do.(bool) {
+				r.debuglog(fmt.Sprintf("Skip: %s", tq.task.If))
 				continue L
 			}
 		}
 		if tq.task.If == "" && !tq.force {
+			r.debuglog(fmt.Sprintf("Skip: %s", "(non `if:` section)"))
 			continue L
 		}
 
-		log.Printf("%s%s\n", prefix, "perform `do:` operation")
+		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds][DO] ", maxDigits, maxLength), n, id)
 		if err := r.Perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
-			log.Printf("%s%s\n", prefix, "perform `ok:` operation")
+			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds][OK] ", maxDigits, maxLength), n, id)
 			if err := r.Perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
-				log.Printf("%serror: %s\n", prefix, err)
+				r.errlog(fmt.Sprintf("%s", err))
 				continue L
 			}
 		} else {
-			log.Printf("%serror: %s\n", prefix, err)
-			log.Printf("%s%s\n", prefix, "perform `ng:` operation")
+			r.errlog(fmt.Sprintf("%s", err))
+			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds][NG] ", maxDigits, maxLength), n, id)
 			if err := r.Perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
-				log.Printf("%serror: %s\n", prefix, err)
+				r.errlog(fmt.Sprintf("%s", err))
 				continue L
 			}
 		}
 	}
 
-	log.Println("session finished")
+	r.logPrefix = ""
+	r.log("Session finished")
 	return nil
 }
 
@@ -126,8 +136,6 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		r.revertEnv()
 		r.mu.Unlock()
 	}()
-
-	prefix := fmt.Sprintf("[#%d <- %s] ", i.Number(), t.Id)
 
 	for _, e := range t.Env {
 		os.Setenv(e.Name, e.Value)
@@ -144,16 +152,16 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		}
 		return nil
 	case len(o.Labels) > 0:
-		log.Printf("%sset labels: %s", prefix, o.Labels)
+		r.log(fmt.Sprintf("Set labels: %s", strings.Join(o.Labels, ", ")))
 		return r.github.SetLabels(ctx, i.Number(), o.Labels)
 	case len(o.Assignees) > 0:
-		log.Printf("%sset assignees: %s", prefix, o.Assignees)
+		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(o.Assignees, ", ")))
 		return r.github.SetAssignees(ctx, i.Number(), o.Assignees)
 	case o.Comment != "":
-		log.Printf("%sadd comment: %s", prefix, o.Comment)
+		r.log(fmt.Sprintf("Add comment: %s", o.Comment))
 		return r.github.AddComment(ctx, i.Number(), o.Comment)
 	case o.Action != "":
-		log.Printf("%s%s: #%d", prefix, o.Action, i.Number())
+		r.log(fmt.Sprintf("%s: #%d", o.Action, i.Number()))
 		switch o.Action {
 		case "close":
 			return r.github.CloseIssue(ctx, i.Number())
@@ -163,10 +171,10 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 			return fmt.Errorf("invalid action: %s", o.Action)
 		}
 	case o.Notify != "":
-		log.Printf("%ssend notification: %s", prefix, o.Notify)
+		r.log(fmt.Sprintf("Send notification: %s", o.Notify))
 		return r.slack.PostMessage(ctx, o.Notify)
 	case len(o.Next) > 0:
-		log.Printf("%scall next task: %s", prefix, o.Next)
+		r.log(fmt.Sprintf("Call next task: %s", strings.Join(o.Next, ", ")))
 		for _, id := range o.Next {
 			t, err := r.config.Tasks.Find(id)
 			if err != nil {
@@ -180,6 +188,18 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		}
 	}
 	return nil
+}
+
+func (r *Runner) log(m string) {
+	log.Info().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
+}
+
+func (r *Runner) errlog(m string) {
+	log.Error().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
+}
+
+func (r *Runner) debuglog(m string) {
+	log.Debug().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
 }
 
 func (r *Runner) revertEnv() {

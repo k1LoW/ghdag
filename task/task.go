@@ -30,6 +30,16 @@ func (tasks Tasks) Find(id string) (*Task, error) {
 	return nil, fmt.Errorf("not found task: %s", id)
 }
 
+func (tasks Tasks) MaxLengthID() int {
+	length := 0
+	for _, t := range tasks {
+		if length < len(t.Id) {
+			length = len(t.Id)
+		}
+	}
+	return length
+}
+
 func (t *Task) CheckSyntax() (bool, []string) {
 	valid := true
 	prefix := fmt.Sprintf("[%s] ", t.Id)
