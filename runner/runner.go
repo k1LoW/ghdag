@@ -10,23 +10,30 @@ import (
 	"github.com/k1LoW/exec"
 	"github.com/k1LoW/ghdag/config"
 	"github.com/k1LoW/ghdag/gh"
+	"github.com/k1LoW/ghdag/slk"
 	"github.com/k1LoW/ghdag/task"
 )
 
 type Runner struct {
 	config *config.Config
 	github *gh.Client
+	slack  *slk.Client
 	env    []string
 }
 
 func New(c *config.Config) (*Runner, error) {
-	client, err := gh.NewClient()
+	gc, err := gh.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	sc, err := slk.NewClient()
 	if err != nil {
 		return nil, err
 	}
 	return &Runner{
 		config: c,
-		github: client,
+		github: gc,
+		slack:  sc,
 		env:    os.Environ(),
 	}, nil
 }
