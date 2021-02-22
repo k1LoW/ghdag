@@ -111,7 +111,7 @@ func buildWebhookMessage(m string) *slack.WebhookMessage {
 
 // buildBlocks
 func buildBlocks(m string) []slack.Block {
-	elements := []slack.MixedElement{slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("%s | #%s | %s", os.Getenv("GITHUB_REPOSITORY"), os.Getenv("GHDAG_TARGET_NUMBER"), os.Getenv("GHDAG_TASK_ID")), false, false)}
+	elements := []slack.MixedElement{slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("%s | <%s|#%s> | %s", os.Getenv("GITHUB_REPOSITORY"), os.Getenv("GHDAG_TARGET_URL"), os.Getenv("GHDAG_TARGET_NUMBER"), os.Getenv("GHDAG_TASK_ID")), false, false)}
 	contextBlock := slack.NewContextBlock("footer", elements...)
 	return []slack.Block{
 		slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", m, false, false), nil, nil),

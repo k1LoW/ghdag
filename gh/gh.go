@@ -52,13 +52,19 @@ type Target struct {
 
 func (t *Target) Dump() map[string]interface{} {
 	return map[string]interface{}{
-		"number": t.Number(),
+		"number": t.i.GetNumber(),
+		"title":  t.i.GetTitle(),
+		"body":   t.i.GetBody(),
 		"labels": t.Labels(),
 	}
 }
 
 func (t *Target) Number() int {
-	return *t.i.Number
+	return t.i.GetNumber()
+}
+
+func (t *Target) URL() string {
+	return t.i.GetHTMLURL()
 }
 
 func (t *Target) Labels() []string {
