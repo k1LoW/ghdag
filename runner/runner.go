@@ -148,7 +148,7 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		return r.github.SetLabels(ctx, i.Number(), o.Labels)
 	case len(o.Assignees) > 0:
 		log.Printf("%sset assignees: %s", prefix, o.Assignees)
-		return r.github.SetAssignees(ctx, i.Number(), o.Labels)
+		return r.github.SetAssignees(ctx, i.Number(), o.Assignees)
 	case o.Comment != "":
 		log.Printf("%sadd comment: %s", prefix, o.Comment)
 		return r.github.AddComment(ctx, i.Number(), o.Comment)

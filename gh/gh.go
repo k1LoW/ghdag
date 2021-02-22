@@ -109,27 +109,21 @@ func (c *Client) SetLabels(ctx context.Context, n int, labels []string) error {
 func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) error {
 	as := []string{}
 	for _, a := range assignees {
-		splitted := strings.Split(a, " ")
-		for _, s := range splitted {
-			if s == "" {
-				continue
-			}
-			trimed := strings.Trim(s, "@")
-			if !strings.Contains(trimed, "/") {
-				as = append(as, trimed)
-				continue
-			}
-			splitted := strings.Split(trimed, "/")
-			org := splitted[0]
-			slug := splitted[1]
-			opts := &github.TeamListTeamMembersOptions{}
-			users, _, err := c.client.Teams.ListTeamMembersBySlug(ctx, org, slug, opts)
-			if err != nil {
-				return err
-			}
-			for _, u := range users {
-				as = append(as, *u.Login)
-			}
+		trimed := strings.Trim(a, "@")
+		if !strings.Contains(trimed, "/") {
+			as = append(as, trimed)
+			continue
+		}
+		splitted := strings.Split(trimed, "/")
+		org := splitted[0]
+		slug := splitted[1]
+		opts := &github.TeamListTeamMembersOptions{}
+		users, _, err := c.client.Teams.ListTeamMembersBySlug(ctx, org, slug, opts)
+		if err != nil {
+			return err
+		}
+		for _, u := range users {
+			as = append(as, *u.Login)
 		}
 	}
 	as = unique(as)
