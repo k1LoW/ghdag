@@ -103,6 +103,7 @@ L:
 
 func buildWebhookMessage(m string) *slack.WebhookMessage {
 	return &slack.WebhookMessage{
+		Channel: os.Getenv("SLACK_CHANNEL"),
 		Blocks: &slack.Blocks{
 			BlockSet: buildBlocks(m),
 		},
