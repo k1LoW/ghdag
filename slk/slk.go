@@ -56,7 +56,7 @@ func (c *Client) postMessage(ctx context.Context, m string) error {
 	if err != nil {
 		return err
 	}
-	if _, _, err := c.client.PostMessageContext(ctx, channelID, slack.MsgOptionText(m, true)); err != nil {
+	if _, _, err := c.client.PostMessageContext(ctx, channelID, slack.MsgOptionBlocks(buildBlocks(m)...)); err != nil {
 		return err
 	}
 	return nil
@@ -103,6 +103,18 @@ L:
 
 func buildWebhookMessage(m string) *slack.WebhookMessage {
 	return &slack.WebhookMessage{
-		Text: m,
+		Blocks: &slack.Blocks{
+			BlockSet: buildBlocks(m),
+		},
+	}
+}
+
+// buildBlocks
+func buildBlocks(m string) []slack.Block {
+	elements := []slack.MixedElement{slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("%s | #%s | %s", os.Getenv("GITHUB_REPOSITORY"), os.Getenv("GHDAG_TARGET_NUMBER"), os.Getenv("GHDAG_TASK_ID")), false, false)}
+	contextBlock := slack.NewContextBlock("footer", elements...)
+	return []slack.Block{
+		slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", m, false, false), nil, nil),
+		contextBlock,
 	}
 }
