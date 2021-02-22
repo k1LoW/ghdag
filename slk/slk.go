@@ -3,6 +3,7 @@ package slk
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -92,6 +93,9 @@ L:
 		if nc == "" {
 			break
 		}
+	}
+	if cID == "" {
+		return "", fmt.Errorf("not found channel: %s", channel)
 	}
 
 	return cID, nil
