@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
+	"sync"
 
 	"github.com/antonmedv/expr"
 	"github.com/k1LoW/exec"
@@ -19,6 +21,7 @@ type Runner struct {
 	github *gh.Client
 	slack  *slk.Client
 	env    []string
+	mu     sync.Mutex
 }
 
 func New(c *config.Config) (*Runner, error) {
@@ -118,17 +121,22 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		return nil
 	}
 
+	r.mu.Lock()
+	defer func() {
+		r.revertEnv()
+		r.mu.Unlock()
+	}()
+
 	prefix := fmt.Sprintf("[#%d <- %s] ", i.Number(), t.Id)
 
-	env := r.env
 	for _, e := range t.Env {
-		env = append(env, fmt.Sprintf("%s=%s", e.Name, e.Value))
+		os.Setenv(e.Name, e.Value)
 	}
 
 	switch {
 	case o.Run != "":
 		c := exec.CommandContext(ctx, "sh", "-c", "o.Run")
-		c.Env = env
+		c.Env = os.Environ()
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
 		if err := c.Run(); err != nil {
@@ -155,7 +163,8 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 			return fmt.Errorf("invalid action: %s", o.Action)
 		}
 	case o.Notify != "":
-		return fmt.Errorf("not implemented: %s", "notify")
+		log.Printf("%ssend notification: %s", prefix, o.Notify)
+		return r.slack.PostMessage(ctx, o.Notify)
 	case len(o.Next) > 0:
 		for _, id := range o.Next {
 			t, err := r.config.Tasks.Find(id)
@@ -170,4 +179,15 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		}
 	}
 	return nil
+}
+
+func (r *Runner) revertEnv() {
+	for _, e := range os.Environ() {
+		splitted := strings.Split(e, "=")
+		os.Unsetenv(splitted[0])
+	}
+	for _, e := range r.env {
+		splitted := strings.Split(e, "=")
+		os.Setenv(splitted[0], splitted[1])
+	}
 }
