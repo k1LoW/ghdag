@@ -166,6 +166,7 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 		log.Printf("%ssend notification: %s", prefix, o.Notify)
 		return r.slack.PostMessage(ctx, o.Notify)
 	case len(o.Next) > 0:
+		log.Printf("%scall next task: %s", prefix, o.Next)
 		for _, id := range o.Next {
 			t, err := r.config.Tasks.Find(id)
 			if err != nil {
