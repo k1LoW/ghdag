@@ -147,7 +147,7 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 
 	switch {
 	case o.Run != "":
-		c := exec.CommandContext(ctx, "sh", "-c", "o.Run")
+		c := exec.CommandContext(ctx, "sh", "-c", o.Run)
 		c.Env = os.Environ()
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
