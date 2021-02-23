@@ -25,9 +25,47 @@ ghdag run myworkflow.yml
 
 :construction:
 
-## Environments
+## Workflow configuration
 
-| Environment variable | Description | Default on GitHub Actions |
+### Syntax
+
+#### Tasks (`tasks:`)
+
+#### Id (`tasks[*].id:`)
+
+#### Name (`tasks[*].name:`)
+
+#### Run condition (`tasks[*].if:`)
+
+##### Expression syntax
+
+ghdag use [antonmedv/expr](https://github.com/antonmedv/expr).
+
+See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md).
+
+##### Variables
+
+#### Environment variables (`tasks[*].env:`)
+
+#### Actions (`tasks[*].do:`, `tasks[*].ok:`, `tasks[*].ng:`)
+
+#### Execute command (`tasks[*].<action_type>.run:`)
+
+#### Update labels (`tasks[*].<action_type>.labels:`)
+
+#### Update assignees (`tasks[*].<action_type>.assignees:`)
+
+#### Add comment (`tasks[*].<action_type>.comment:`)
+
+#### Change state (`tasks[*].<action_type>.state:`)
+
+#### Notify message using Slack (`tasks[*].<action_type>.notify:`)
+
+#### Call next tasks (`tasks[*].<action_type>.next:`)
+
+### Environment variables
+
+| Environment variable | Nameription | Default on GitHub Actions |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | A GitHub access token. | - |
 | `GITHUB_REPOSITORY` | The owner and repository name | `owner/repo` of the repository where GitHub Actions are running |
@@ -37,7 +75,7 @@ ghdag run myworkflow.yml
 | `SLACK_CHANNEL` | A notify Slack channel | - |
 | `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` section. | - |
 
-### Required scope of `SLACK_API_TOKEN`
+#### Required scope of `SLACK_API_TOKEN`
 
 - `channel:read`
 - `chat.write`
