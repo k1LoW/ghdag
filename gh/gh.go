@@ -23,7 +23,11 @@ type Client struct {
 
 // NewClient return Client
 func NewClient() (*Client, error) {
-	c := github.NewClient(httpClient(os.Getenv("GITHUB_TOKEN")))
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		return nil, fmt.Errorf("env %s is not set", "GITHUB_TOKEN")
+	}
+	c := github.NewClient(httpClient(token))
 	if baseURL := os.Getenv("GITHUB_API_URL"); baseURL != "" {
 		baseEndpoint, err := url.Parse(baseURL)
 		if err != nil {
