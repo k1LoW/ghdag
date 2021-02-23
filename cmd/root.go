@@ -30,8 +30,8 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:          "ghdag",
-	Short:        "ghdag",
-	Long:         `ghdag.`,
+	Short:        "ghdag is a tiny workflow engine for GitHub issue and pull request",
+	Long:         `ghdag is a tiny workflow engine for GitHub issue and pull request.`,
 	SilenceUsage: true,
 }
 
