@@ -20,7 +20,7 @@ type Operation struct {
 	Labels    []string      `yaml:"labels,omitempty"`
 	Assignees []string      `yaml:"assignees,omitempty"`
 	Comment   string        `yaml:"comment,omitempty"`
-	Action    string        `yaml:"action,omitempty"`
+	State    string        `yaml:"state,omitempty"`
 	Notify    string        `yaml:"notify,omitempty"`
 	Next      []string      `yaml:"next,omitempty"`
 }

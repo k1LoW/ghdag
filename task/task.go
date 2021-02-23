@@ -88,7 +88,7 @@ func (t *Task) CheckOperationSyntax(o *Operation) (bool, []string) {
 	if o.Comment != "" {
 		c++
 	}
-	if o.Action != "" {
+	if o.State != "" {
 		c++
 	}
 	if o.Notify != "" {

@@ -164,15 +164,15 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 	case o.Comment != "":
 		r.log(fmt.Sprintf("Add comment: %s", o.Comment))
 		return r.github.AddComment(ctx, i.Number(), o.Comment)
-	case o.Action != "":
-		r.log(fmt.Sprintf("%s: #%d", o.Action, i.Number()))
-		switch o.Action {
-		case "close":
+	case o.State != "":
+		r.log(fmt.Sprintf("Change state: %s", o.State))
+		switch o.State {
+		case "close", "closed":
 			return r.github.CloseIssue(ctx, i.Number())
-		case "merge":
+		case "merge", "merged":
 			return r.github.MergePullRequest(ctx, i.Number())
 		default:
-			return fmt.Errorf("invalid action: %s", o.Action)
+			return fmt.Errorf("invalid state: %s", o.State)
 		}
 	case o.Notify != "":
 		r.log(fmt.Sprintf("Send notification: %s", o.Notify))
