@@ -12,11 +12,11 @@ type Env struct {
 type Task struct {
 	Id   string
 	If   string `yaml:"if,omitempty"`
-	Do   *Operation
-	Ok   *Operation `yaml:"ok,omitempty"`
-	Ng   *Operation `yaml:"ng,omitempty"`
-	Env  []Env      `yaml:"env,omitempty"`
-	Desc string     `yaml:"desc,omitempty"`
+	Do   *Action
+	Ok   *Action `yaml:"ok,omitempty"`
+	Ng   *Action `yaml:"ng,omitempty"`
+	Env  []Env   `yaml:"env,omitempty"`
+	Desc string  `yaml:"desc,omitempty"`
 }
 
 type Tasks []*Task
@@ -45,24 +45,24 @@ func (t *Task) CheckSyntax() (bool, []string) {
 	prefix := fmt.Sprintf("[%s] ", t.Id)
 	errors := []string{}
 	if t.Do != nil {
-		v, e := t.CheckOperationSyntax(t.Do)
+		v, e := t.CheckActionSyntax(t.Do)
 		if !v {
 			valid = false
 			errors = append(errors, e...)
 		}
 	} else {
 		valid = false
-		errors = append(errors, fmt.Sprintf("%snot found `do:` operation", prefix))
+		errors = append(errors, fmt.Sprintf("%snot found `do:` action", prefix))
 	}
 	if t.Ok != nil {
-		v, e := t.CheckOperationSyntax(t.Ok)
+		v, e := t.CheckActionSyntax(t.Ok)
 		if !v {
 			valid = false
 			errors = append(errors, e...)
 		}
 	}
 	if t.Ng != nil {
-		v, e := t.CheckOperationSyntax(t.Ng)
+		v, e := t.CheckActionSyntax(t.Ng)
 		if !v {
 			valid = false
 			errors = append(errors, e...)
@@ -71,35 +71,35 @@ func (t *Task) CheckSyntax() (bool, []string) {
 	return valid, errors
 }
 
-func (t *Task) CheckOperationSyntax(o *Operation) (bool, []string) {
+func (t *Task) CheckActionSyntax(a *Action) (bool, []string) {
 	valid := true
 	prefix := fmt.Sprintf("[%s] ", t.Id)
 	errors := []string{}
 	c := 0
-	if o.Run != "" {
+	if a.Run != "" {
 		c++
 	}
-	if len(o.Labels) > 0 {
+	if len(a.Labels) > 0 {
 		c++
 	}
-	if len(o.Assignees) > 0 {
+	if len(a.Assignees) > 0 {
 		c++
 	}
-	if o.Comment != "" {
+	if a.Comment != "" {
 		c++
 	}
-	if o.State != "" {
+	if a.State != "" {
 		c++
 	}
-	if o.Notify != "" {
+	if a.Notify != "" {
 		c++
 	}
-	if len(o.Next) > 0 {
+	if len(a.Next) > 0 {
 		c++
 	}
 	if c != 1 {
 		valid = false
-		errors = append(errors, fmt.Sprintf("%sinvalid `%s:` operation (want 1 definition, got %d)", prefix, o.Type, c))
+		errors = append(errors, fmt.Sprintf("%sinvalid `%s:` action (want 1 definition, got %d)", prefix, a.Type, c))
 	}
 	return valid, errors
 }

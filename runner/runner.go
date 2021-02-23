@@ -126,8 +126,8 @@ L:
 	return nil
 }
 
-func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t *task.Task, q chan TaskQueue) error {
-	if o == nil {
+func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *task.Task, q chan TaskQueue) error {
+	if a == nil {
 		return nil
 	}
 
@@ -146,8 +146,8 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 	}
 
 	switch {
-	case o.Run != "":
-		c := exec.CommandContext(ctx, "sh", "-c", o.Run)
+	case a.Run != "":
+		c := exec.CommandContext(ctx, "sh", "-c", a.Run)
 		c.Env = os.Environ()
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
@@ -155,31 +155,31 @@ func (r *Runner) Perform(ctx context.Context, o *task.Operation, i *gh.Target, t
 			return err
 		}
 		return nil
-	case len(o.Labels) > 0:
-		r.log(fmt.Sprintf("Set labels: %s", strings.Join(o.Labels, ", ")))
-		return r.github.SetLabels(ctx, i.Number(), o.Labels)
-	case len(o.Assignees) > 0:
-		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(o.Assignees, ", ")))
-		return r.github.SetAssignees(ctx, i.Number(), o.Assignees)
-	case o.Comment != "":
-		r.log(fmt.Sprintf("Add comment: %s", o.Comment))
-		return r.github.AddComment(ctx, i.Number(), o.Comment)
-	case o.State != "":
-		r.log(fmt.Sprintf("Change state: %s", o.State))
-		switch o.State {
+	case len(a.Labels) > 0:
+		r.log(fmt.Sprintf("Set labels: %s", strings.Join(a.Labels, ", ")))
+		return r.github.SetLabels(ctx, i.Number(), a.Labels)
+	case len(a.Assignees) > 0:
+		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(a.Assignees, ", ")))
+		return r.github.SetAssignees(ctx, i.Number(), a.Assignees)
+	case a.Comment != "":
+		r.log(fmt.Sprintf("Add comment: %s", a.Comment))
+		return r.github.AddComment(ctx, i.Number(), a.Comment)
+	case a.State != "":
+		r.log(fmt.Sprintf("Change state: %s", a.State))
+		switch a.State {
 		case "close", "closed":
 			return r.github.CloseIssue(ctx, i.Number())
 		case "merge", "merged":
 			return r.github.MergePullRequest(ctx, i.Number())
 		default:
-			return fmt.Errorf("invalid state: %s", o.State)
+			return fmt.Errorf("invalid state: %s", a.State)
 		}
-	case o.Notify != "":
-		r.log(fmt.Sprintf("Send notification: %s", o.Notify))
-		return r.slack.PostMessage(ctx, o.Notify)
-	case len(o.Next) > 0:
-		r.log(fmt.Sprintf("Call next task: %s", strings.Join(o.Next, ", ")))
-		for _, id := range o.Next {
+	case a.Notify != "":
+		r.log(fmt.Sprintf("Send notification: %s", a.Notify))
+		return r.slack.PostMessage(ctx, a.Notify)
+	case len(a.Next) > 0:
+		r.log(fmt.Sprintf("Call next task: %s", strings.Join(a.Next, ", ")))
+		for _, id := range a.Next {
 			t, err := r.config.Tasks.Find(id)
 			if err != nil {
 				return err

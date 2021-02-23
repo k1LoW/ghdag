@@ -6,9 +6,9 @@ func (t *Task) UnmarshalYAML(data []byte) error {
 	raw := &struct {
 		Id   string
 		If   string `yaml:"if,omitempty"`
-		Do   *Operation
-		Ok   *Operation `yaml:"ok,omitempty"`
-		Ng   *Operation `yaml:"ng,omitempty"`
+		Do   *Action
+		Ok   *Action `yaml:"ok,omitempty"`
+		Ng   *Action `yaml:"ng,omitempty"`
 		Env  []Env      `yaml:"env,omitempty"`
 		Desc string     `yaml:"desc,omitempty"`
 	}{}
@@ -19,15 +19,15 @@ func (t *Task) UnmarshalYAML(data []byte) error {
 	t.If = raw.If
 	t.Do = raw.Do
 	if t.Do != nil {
-		t.Do.Type = OperationTypeDo
+		t.Do.Type = ActionTypeDo
 	}
 	t.Ok = raw.Ok
 	if t.Ok != nil {
-		t.Ok.Type = OperationTypeOk
+		t.Ok.Type = ActionTypeOk
 	}
 	t.Ng = raw.Ng
 	if t.Ng != nil {
-		t.Ng.Type = OperationTypeNg
+		t.Ng.Type = ActionTypeNg
 	}
 	t.Env = raw.Env
 	t.Desc = raw.Desc
