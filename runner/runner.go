@@ -141,8 +141,8 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *t
 	os.Setenv("GHDAG_TARGET_URL", i.URL())
 	os.Setenv("GHDAG_TASK_ID", t.Id)
 
-	for _, e := range t.Env {
-		os.Setenv(e.Name, e.Value)
+	for k, v := range t.Env {
+		os.Setenv(k, v)
 	}
 
 	switch {

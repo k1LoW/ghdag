@@ -4,10 +4,7 @@ import (
 	"fmt"
 )
 
-type Env struct {
-	Name  string
-	Value string
-}
+type Env map[string]string
 
 type Task struct {
 	Id   string
@@ -15,7 +12,7 @@ type Task struct {
 	Do   *Action
 	Ok   *Action `yaml:"ok,omitempty"`
 	Ng   *Action `yaml:"ng,omitempty"`
-	Env  []Env   `yaml:"env,omitempty"`
+	Env  Env     `yaml:"env,omitempty"`
 	Desc string  `yaml:"desc,omitempty"`
 }
 

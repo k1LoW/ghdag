@@ -9,8 +9,8 @@ func (t *Task) UnmarshalYAML(data []byte) error {
 		Do   *Action
 		Ok   *Action `yaml:"ok,omitempty"`
 		Ng   *Action `yaml:"ng,omitempty"`
-		Env  []Env      `yaml:"env,omitempty"`
-		Desc string     `yaml:"desc,omitempty"`
+		Env  Env     `yaml:"env,omitempty"`
+		Desc string  `yaml:"desc,omitempty"`
 	}{}
 	if err := yaml.Unmarshal(data, raw); err != nil {
 		return err
