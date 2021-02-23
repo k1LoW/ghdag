@@ -24,6 +24,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/k1LoW/ghdag/version"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +33,7 @@ var rootCmd = &cobra.Command{
 	Use:          "ghdag",
 	Short:        "ghdag is a tiny workflow engine for GitHub issue and pull request",
 	Long:         `ghdag is a tiny workflow engine for GitHub issue and pull request.`,
+	Version:      version.Version,
 	SilenceUsage: true,
 }
 

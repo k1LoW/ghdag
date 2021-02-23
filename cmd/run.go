@@ -23,23 +23,27 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 	"github.com/k1LoW/ghdag/config"
 	"github.com/k1LoW/ghdag/runner"
+	"github.com/k1LoW/ghdag/version"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run fn",
-	Long:  `run fn.`,
+	Short: "Run workflow",
+	Long:  `Run workflow.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Info().Msg(fmt.Sprintf("%s version %s", version.Name, version.Version))
 		b, err := ioutil.ReadFile(filepath.Clean(args[0]))
 		if err != nil {
 			return errors.WithStack(err)
