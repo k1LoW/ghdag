@@ -1,0 +1,84 @@
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+builds:
+-
+  id: ghdag-linux
+  env:
+    - CGO_ENABLED=0
+  goos:
+    - linux
+  goarch:
+    - amd64
+  ldflags:
+    - -s -w -X github.com/k1LoW/ghdag.version={{.Version}} -X github.com/k1LoW/ghdag.commit={{.FullCommit}} -X github.com/k1LoW/ghdag.date={{.Date}} -X github.com/k1LoW/ghdag/version.Version={{.Version}}
+-
+  id: ghdag-darwin-windows
+  env:
+    - CGO_ENABLED=0
+  goos:
+    - darwin
+    - windows
+  goarch:
+    - amd64
+  ldflags:
+    - -s -w -X github.com/k1LoW/ghdag.version={{.Version}} -X github.com/k1LoW/ghdag.commit={{.FullCommit}} -X github.com/k1LoW/ghdag.date={{.Date}} -X github.com/k1LoW/ghdag/version.Version={{.Version}}
+archives:
+-
+  id: ghdag-archive
+  name_template: '{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+  format_overrides:
+    - goos: darwin
+      format: zip
+  files:
+    - CREDITS
+    - README.md
+    - CHANGELOG.md
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Version }}-next"
+changelog:
+  skip: true
+dockers:
+  - image_templates:
+      - 'ghcr.io/k1low/ghdag:v{{ .Version }}'
+      - 'ghcr.io/k1low/ghdag:latest'
+    dockerfile: Dockerfile
+    binaries:
+      - ghdag
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    extra_files:
+      - scripts/entrypoint.sh
+brews:
+  -
+    name: ghdag
+    tap:
+      owner: k1LoW
+      name: homebrew-tap
+    commit_author:
+      name: k1LoW
+      email: k1lowxb@gmail.com
+    homepage: https://github.com/k1LoW/ghdag
+    description: ghdag is a tiny workflow engine for GitHub issue and pull request.
+    license: MIT
+nfpms:
+  - id: ghdag-nfpms
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}-1_{{ .Arch }}"
+    builds:
+      - ghdag-linux
+    homepage: https://github.com/k1LoW/ghdag
+    maintainer: Ken'ichiro Oyama <k1lowxb@gmail.com>
+    description: ghdag is a tiny workflow engine for GitHub issue and pull request.
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+    bindir: /usr/bin
+    epoch: 1
