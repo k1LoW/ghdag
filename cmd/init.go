@@ -62,7 +62,7 @@ tasks:
       run: echo 'commented'
     ng:
       run: echo 'comment failed'
-    desc: Comment when issue labels contains 'good first issue'
+    name: Comment when issue labels contains 'good first issue'
 `
 		tmpl := template.Must(template.New("init").Parse(ts))
 		tmplData := map[string]interface{}{}

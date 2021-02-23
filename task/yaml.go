@@ -10,7 +10,7 @@ func (t *Task) UnmarshalYAML(data []byte) error {
 		Ok   *Action `yaml:"ok,omitempty"`
 		Ng   *Action `yaml:"ng,omitempty"`
 		Env  Env     `yaml:"env,omitempty"`
-		Desc string  `yaml:"desc,omitempty"`
+		Name string  `yaml:"name,omitempty"`
 	}{}
 	if err := yaml.Unmarshal(data, raw); err != nil {
 		return err
@@ -30,7 +30,7 @@ func (t *Task) UnmarshalYAML(data []byte) error {
 		t.Ng.Type = ActionTypeNg
 	}
 	t.Env = raw.Env
-	t.Desc = raw.Desc
+	t.Name = raw.Name
 
 	return nil
 }

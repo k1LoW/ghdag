@@ -13,7 +13,7 @@ type Task struct {
 	Ok   *Action `yaml:"ok,omitempty"`
 	Ng   *Action `yaml:"ng,omitempty"`
 	Env  Env     `yaml:"env,omitempty"`
-	Desc string  `yaml:"desc,omitempty"`
+	Name string  `yaml:"name,omitempty"`
 }
 
 type Tasks []*Task
