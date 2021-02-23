@@ -104,16 +104,16 @@ L:
 			continue L
 		}
 
-		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds][DO] ", maxDigits, maxLength), n, id)
+		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
 		if err := r.Perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
-			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds][OK] ", maxDigits, maxLength), n, id)
+			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
 			if err := r.Perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
 				r.errlog(fmt.Sprintf("%s", err))
 				continue L
 			}
 		} else {
 			r.errlog(fmt.Sprintf("%s", err))
-			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds][NG] ", maxDigits, maxLength), n, id)
+			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
 			if err := r.Perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
 				r.errlog(fmt.Sprintf("%s", err))
 				continue L
