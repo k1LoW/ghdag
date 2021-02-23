@@ -35,8 +35,8 @@ import (
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Generate a ghdag workflow file",
-	Long:  `Generate a ghdag workflow file.`,
+	Short: "Generate a workflow file for ghdag",
+	Long:  `Generate a workflow file for ghdag.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Info().Msg(fmt.Sprintf("%s version %s", version.Name, version.Version))
@@ -61,8 +61,8 @@ tasks:
     ok:
       run: echo 'commented'
     ng:
-      run: echo 'fail comment'
-    desc: This task comment when labels contains 'good first issue'
+      run: echo 'comment failed'
+    desc: Comment when issue labels contains 'good first issue'
 `
 		tmpl := template.Must(template.New("init").Parse(ts))
 		tmplData := map[string]interface{}{}
