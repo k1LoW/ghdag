@@ -10,6 +10,7 @@ import (
 	"github.com/antonmedv/expr"
 	"github.com/k1LoW/exec"
 	"github.com/k1LoW/ghdag/config"
+	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/gh"
 	"github.com/k1LoW/ghdag/slk"
 	"github.com/k1LoW/ghdag/task"
@@ -150,11 +151,11 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *t
 	os.Setenv("GHDAG_TARGET_URL", i.URL())
 	os.Setenv("GHDAG_TASK_ID", t.Id)
 
-	for k, v := range r.config.Env {
-		os.Setenv(k, v)
+	if err := r.config.Env.Setenv(); err != nil {
+		return err
 	}
-	for k, v := range t.Env {
-		os.Setenv(k, v)
+	if err := t.Env.Setenv(); err != nil {
+		return err
 	}
 
 	switch {
@@ -219,12 +220,5 @@ func (r *Runner) debuglog(m string) {
 }
 
 func (r *Runner) revertEnv() {
-	for _, e := range os.Environ() {
-		splitted := strings.Split(e, "=")
-		os.Unsetenv(splitted[0])
-	}
-	for _, e := range r.envCache {
-		splitted := strings.Split(e, "=")
-		os.Setenv(splitted[0], splitted[1])
-	}
+	env.Revert(r.envCache)
 }
