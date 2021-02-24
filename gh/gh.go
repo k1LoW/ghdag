@@ -58,12 +58,12 @@ type Target struct {
 
 func (t *Target) Dump() map[string]interface{} {
 	return map[string]interface{}{
-		"number":                      t.i.GetNumber(),
-		"title":                       t.i.GetTitle(),
-		"body":                        t.i.GetBody(),
+		"number":                      t.Number(),
+		"title":                       t.Title(),
+		"body":                        t.Body(),
 		"labels":                      t.Labels(),
-		"is_issue":                    !t.i.IsPullRequest(),
-		"is_pull_request":             t.i.IsPullRequest(),
+		"is_issue":                    t.IsIssue(),
+		"is_pull_request":             t.IsPullRequest(),
 		"hours_elapsed_since_created": t.HoursElapsedSinceCreated(),
 		"hours_elapsed_since_updated": t.HoursElapsedSinceUpdated(),
 	}
@@ -71,6 +71,14 @@ func (t *Target) Dump() map[string]interface{} {
 
 func (t *Target) Number() int {
 	return t.i.GetNumber()
+}
+
+func (t *Target) Title() string {
+	return t.i.GetTitle()
+}
+
+func (t *Target) Body() string {
+	return t.i.GetBody()
 }
 
 func (t *Target) URL() string {
@@ -83,6 +91,14 @@ func (t *Target) Labels() []string {
 		labels = append(labels, *l.Name)
 	}
 	return labels
+}
+
+func (t *Target) IsIssue() bool {
+	return !t.i.IsPullRequest()
+}
+
+func (t *Target) IsPullRequest() bool {
+	return t.i.IsPullRequest()
 }
 
 func (t *Target) HoursElapsedSinceCreated() int {
