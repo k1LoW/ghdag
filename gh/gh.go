@@ -62,6 +62,7 @@ func (t *Target) Dump() map[string]interface{} {
 		"title":                       t.Title(),
 		"body":                        t.Body(),
 		"labels":                      t.Labels(),
+		"assignees":                   t.Assignees(),
 		"is_issue":                    t.IsIssue(),
 		"is_pull_request":             t.IsPullRequest(),
 		"hours_elapsed_since_created": t.HoursElapsedSinceCreated(),
@@ -91,6 +92,14 @@ func (t *Target) Labels() []string {
 		labels = append(labels, *l.Name)
 	}
 	return labels
+}
+
+func (t *Target) Assignees() []string {
+	assignees := []string{}
+	for _, u := range t.i.Assignees {
+		assignees = append(assignees, u.GetName())
+	}
+	return assignees
 }
 
 func (t *Target) IsIssue() bool {
