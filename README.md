@@ -53,10 +53,10 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `title` | `string` | Title of the issue (pull request) |
 | `body` | `string` | Body of the issue (pull request) |
 | `labels` | `array` | Labels that are set for the issue |
-| `is_issue` | `bool` | `true` if the target type of the workflow is "Issue". |
-| `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request". |
-| `hours_elapsed_since_created` | `int` | :construction: |
-| `hours_elapsed_since_updated` | `int` | :construction: |
+| `is_issue` | `bool` | `true` if the target type of the workflow is "Issue" |
+| `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request" |
+| `hours_elapsed_since_created` | `int` | Hours elspsed since the issue (pull request) created |
+| `hours_elapsed_since_updated` | `int` | Hours elspsed since the issue (pull request) updated |
 
 #### Environment variables (`tasks[*].env:`)
 

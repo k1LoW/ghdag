@@ -58,12 +58,14 @@ type Target struct {
 
 func (t *Target) Dump() map[string]interface{} {
 	return map[string]interface{}{
-		"number":          t.i.GetNumber(),
-		"title":           t.i.GetTitle(),
-		"body":            t.i.GetBody(),
-		"labels":          t.Labels(),
-		"is_issue":        !t.i.IsPullRequest(),
-		"is_pull_request": t.i.IsPullRequest(),
+		"number":                      t.i.GetNumber(),
+		"title":                       t.i.GetTitle(),
+		"body":                        t.i.GetBody(),
+		"labels":                      t.Labels(),
+		"is_issue":                    !t.i.IsPullRequest(),
+		"is_pull_request":             t.i.IsPullRequest(),
+		"hours_elapsed_since_created": t.HoursElapsedSinceCreated(),
+		"hours_elapsed_since_updated": t.HoursElapsedSinceUpdated(),
 	}
 }
 
@@ -81,6 +83,18 @@ func (t *Target) Labels() []string {
 		labels = append(labels, *l.Name)
 	}
 	return labels
+}
+
+func (t *Target) HoursElapsedSinceCreated() int {
+	now := time.Now()
+	d := now.Sub(t.i.GetCreatedAt())
+	return int(d.Hours())
+}
+
+func (t *Target) HoursElapsedSinceUpdated() int {
+	now := time.Now()
+	d := now.Sub(t.i.GetUpdatedAt())
+	return int(d.Hours())
 }
 
 type Targets map[int]*Target
