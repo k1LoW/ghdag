@@ -46,7 +46,7 @@ func New(c *config.Config) (*Runner, error) {
 type TaskQueue struct {
 	target *gh.Target
 	task   *task.Task
-	force  bool
+	called bool
 }
 
 func (r *Runner) Run(ctx context.Context) error {
@@ -99,9 +99,18 @@ L:
 				continue L
 			}
 		}
-		if tq.task.If == "" && !tq.force {
+		if tq.task.If == "" && !tq.called {
 			r.debuglog(fmt.Sprintf("Skip: %s", "(non `if:` section)"))
 			continue L
+		}
+
+		if tq.called {
+			// Update target
+			target, err := r.github.FetchTarget(ctx, tq.target.Number())
+			if err != nil {
+				return err
+			}
+			tq.target = target
 		}
 
 		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
@@ -187,7 +196,7 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *t
 			q <- TaskQueue{
 				target: i,
 				task:   t,
-				force:  true,
+				called: true,
 			}
 		}
 	}
