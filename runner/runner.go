@@ -20,7 +20,7 @@ type Runner struct {
 	config    *config.Config
 	github    *gh.Client
 	slack     *slk.Client
-	env       []string
+	envCache  []string
 	mu        sync.Mutex
 	logPrefix string
 }
@@ -38,7 +38,7 @@ func New(c *config.Config) (*Runner, error) {
 		config:    c,
 		github:    gc,
 		slack:     sc,
-		env:       os.Environ(),
+		envCache:  os.Environ(),
 		logPrefix: "",
 	}, nil
 }
@@ -150,6 +150,9 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *t
 	os.Setenv("GHDAG_TARGET_URL", i.URL())
 	os.Setenv("GHDAG_TASK_ID", t.Id)
 
+	for k, v := range r.config.Env {
+		os.Setenv(k, v)
+	}
 	for k, v := range t.Env {
 		os.Setenv(k, v)
 	}
@@ -220,7 +223,7 @@ func (r *Runner) revertEnv() {
 		splitted := strings.Split(e, "=")
 		os.Unsetenv(splitted[0])
 	}
-	for _, e := range r.env {
+	for _, e := range r.envCache {
 		splitted := strings.Split(e, "=")
 		os.Setenv(splitted[0], splitted[1])
 	}

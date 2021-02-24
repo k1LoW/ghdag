@@ -2,9 +2,9 @@ package task
 
 import (
 	"fmt"
-)
 
-type Env map[string]string
+	"github.com/k1LoW/ghdag/env"
+)
 
 type Task struct {
 	Id   string
@@ -12,7 +12,7 @@ type Task struct {
 	Do   *Action
 	Ok   *Action `yaml:"ok,omitempty"`
 	Ng   *Action `yaml:"ng,omitempty"`
-	Env  Env     `yaml:"env,omitempty"`
+	Env  env.Env `yaml:"env,omitempty"`
 	Name string  `yaml:"name,omitempty"`
 }
 

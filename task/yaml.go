@@ -1,6 +1,9 @@
 package task
 
-import "github.com/goccy/go-yaml"
+import (
+	"github.com/goccy/go-yaml"
+	"github.com/k1LoW/ghdag/env"
+)
 
 func (t *Task) UnmarshalYAML(data []byte) error {
 	raw := &struct {
@@ -9,7 +12,7 @@ func (t *Task) UnmarshalYAML(data []byte) error {
 		Do   *Action
 		Ok   *Action `yaml:"ok,omitempty"`
 		Ng   *Action `yaml:"ng,omitempty"`
-		Env  Env     `yaml:"env,omitempty"`
+		Env  env.Env `yaml:"env,omitempty"`
 		Name string  `yaml:"name,omitempty"`
 	}{}
 	if err := yaml.Unmarshal(data, raw); err != nil {

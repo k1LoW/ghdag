@@ -29,6 +29,8 @@ ghdag run myworkflow.yml
 
 ### Syntax
 
+#### Environment variables in global scope (`env:`)
+
 #### Tasks (`tasks:`)
 
 #### Id (`tasks[*].id:`)
@@ -58,7 +60,7 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `hours_elapsed_since_created` | `int` | Hours elspsed since the issue (pull request) created |
 | `hours_elapsed_since_updated` | `int` | Hours elspsed since the issue (pull request) updated |
 
-#### Environment variables (`tasks[*].env:`)
+#### Environment variables in the scope of each task (`tasks[*].env:`)
 
 #### Actions (`tasks[*].do:`, `tasks[*].ok:`, `tasks[*].ng:`)
 

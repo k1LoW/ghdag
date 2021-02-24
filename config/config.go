@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/task"
 )
 
 type Config struct {
 	Tasks task.Tasks `yaml:"tasks"`
+	Env   env.Env
 }
 
 func (c *Config) CheckSyntax() error {
