@@ -12,6 +12,8 @@ $ ghdag init myworkflow
 2021-02-23T23:29:48+09:00 [INFO] Creating myworkflow.yml
 ```
 
+And edit myworkflow.yml.
+
 ### Run workflow on your machine
 
 ``` console
