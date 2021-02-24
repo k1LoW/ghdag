@@ -35,6 +35,8 @@ ghdag run myworkflow.yml
 
 #### Name (`tasks[*].name:`)
 
+Task name.
+
 #### Run condition (`tasks[*].if:`)
 
 ##### Expression syntax
@@ -45,23 +47,34 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 
 ##### Variables
 
+| Variable name | Type | Description |
+| --- | --- | --- |
+| `number` | `int` | Number of the issue (pull request) |
+| `title` | `string` | Title of the issue (pull request) |
+| `body` | `string` | Body of the issue (pull request) |
+| `labels` | `array` | Labels that are set for the issue |
+| `is_issue` | `bool` | `true` if the target type of the workflow is "Issue". |
+| `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request". |
+| `hours_elapsed_since_created` | `int` | :construction: |
+| `hours_elapsed_since_updated` | `int` | :construction: |
+
 #### Environment variables (`tasks[*].env:`)
 
 #### Actions (`tasks[*].do:`, `tasks[*].ok:`, `tasks[*].ng:`)
 
-#### Execute command (`tasks[*].<action_type>.run:`)
+#### Action: Execute command (`tasks[*].<action_type>.run:`)
 
-#### Update labels (`tasks[*].<action_type>.labels:`)
+#### Action: Update labels (`tasks[*].<action_type>.labels:`)
 
-#### Update assignees (`tasks[*].<action_type>.assignees:`)
+#### Action: Update assignees (`tasks[*].<action_type>.assignees:`)
 
-#### Add comment (`tasks[*].<action_type>.comment:`)
+#### Action: Add comment (`tasks[*].<action_type>.comment:`)
 
-#### Change state (`tasks[*].<action_type>.state:`)
+#### Action: Change state (`tasks[*].<action_type>.state:`)
 
-#### Notify message using Slack (`tasks[*].<action_type>.notify:`)
+#### Action: Notify message using Slack (`tasks[*].<action_type>.notify:`)
 
-#### Call next tasks (`tasks[*].<action_type>.next:`)
+#### Action: Call next tasks (`tasks[*].<action_type>.next:`)
 
 ### Environment variables
 

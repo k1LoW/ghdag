@@ -58,10 +58,12 @@ type Target struct {
 
 func (t *Target) Dump() map[string]interface{} {
 	return map[string]interface{}{
-		"number": t.i.GetNumber(),
-		"title":  t.i.GetTitle(),
-		"body":   t.i.GetBody(),
-		"labels": t.Labels(),
+		"number":          t.i.GetNumber(),
+		"title":           t.i.GetTitle(),
+		"body":            t.i.GetBody(),
+		"labels":          t.Labels(),
+		"is_issue":        !t.i.IsPullRequest(),
+		"is_pull_request": t.i.IsPullRequest(),
 	}
 }
 
