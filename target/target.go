@@ -12,6 +12,7 @@ type Target struct {
 	Title                    string   `json:"title"`
 	Body                     string   `json:"body"`
 	URL                      string   `json:"url"`
+	Author                   string   `json:"author"`
 	Labels                   []string `json:"labels"`
 	Assignees                []string `json:"assignees"`
 	IsIssue                  bool     `json:"is_issue"`

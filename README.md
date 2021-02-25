@@ -56,6 +56,8 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `number` | `int` | Number of the issue (pull request) |
 | `title` | `string` | Title of the issue (pull request) |
 | `body` | `string` | Body of the issue (pull request) |
+| `url` | `string` | URL of the issue (pull request) |
+| `author` | `string` | Author of the issue (pull request) |
 | `labels` | `array` | Labels that are set for the issue |
 | `is_issue` | `bool` | `true` if the target type of the workflow is "Issue" |
 | `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request" |
