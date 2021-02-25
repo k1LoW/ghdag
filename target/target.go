@@ -1,33 +1,30 @@
 package target
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/goccy/go-json"
+)
 
 // Target is Issue or Pull request
 type Target struct {
-	Number                   int
-	Title                    string
-	Body                     string
-	URL                      string
-	Labels                   []string
-	Assignees                []string
-	IsIssue                  bool
-	IsPullRequest            bool
-	HoursElapsedSinceCreated int
-	HoursElapsedSinceUpdated int
+	Number                   int      `json:"number"`
+	Title                    string   `json:"title"`
+	Body                     string   `json:"body"`
+	URL                      string   `json:"url"`
+	Labels                   []string `json:"labels"`
+	Assignees                []string `json:"assignees"`
+	IsIssue                  bool     `json:"is_issue"`
+	IsPullRequest            bool     `json:"is_pull_request"`
+	HoursElapsedSinceCreated int      `json:"hours_elapsed_since_created"`
+	HoursElapsedSinceUpdated int      `json:"hours_elapsed_since_updated"`
 }
 
 func (t *Target) Dump() map[string]interface{} {
-	return map[string]interface{}{
-		"number":                      t.Number,
-		"title":                       t.Title,
-		"body":                        t.Body,
-		"labels":                      t.Labels,
-		"assignees":                   t.Assignees,
-		"is_issue":                    t.IsIssue,
-		"is_pull_request":             t.IsPullRequest,
-		"hours_elapsed_since_created": t.HoursElapsedSinceCreated,
-		"hours_elapsed_since_updated": t.HoursElapsedSinceUpdated,
-	}
+	b, _ := json.Marshal(t)
+	v := map[string]interface{}{}
+	_ = json.Unmarshal(b, &v)
+	return v
 }
 
 type Targets map[int]*Target
