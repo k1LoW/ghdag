@@ -73,32 +73,6 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
-func NewTarget(i *github.Issue) *target.Target {
-	labels := []string{}
-	for _, l := range i.Labels {
-		labels = append(labels, *l.Name)
-	}
-	assignees := []string{}
-	for _, u := range i.Assignees {
-		assignees = append(assignees, u.GetName())
-	}
-
-	now := time.Now()
-
-	return &target.Target{
-		Number:                   i.GetNumber(),
-		Title:                    i.GetTitle(),
-		Body:                     i.GetBody(),
-		URL:                      i.GetHTMLURL(),
-		Labels:                   labels,
-		Assignees:                assignees,
-		IsIssue:                  !i.IsPullRequest(),
-		IsPullRequest:            i.IsPullRequest(),
-		HoursElapsedSinceCreated: int(now.Sub(i.GetCreatedAt()).Hours()),
-		HoursElapsedSinceUpdated: int(now.Sub(i.GetUpdatedAt()).Hours()),
-	}
-}
-
 func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	targets := target.Targets{}
 
