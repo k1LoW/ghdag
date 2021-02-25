@@ -10,6 +10,19 @@
 $ ghdag init myworkflow
 2021-02-23T23:29:48+09:00 [INFO] ghdag version 0.0.1
 2021-02-23T23:29:48+09:00 [INFO] Creating myworkflow.yml
+$ cat myworkflow.yml
+---
+tasks:
+  -
+    id: sample-task
+    if: '"good first issue" in labels'
+    do:
+      comment: 'Good :+1:'
+    ok:
+      run: echo 'commented'
+    ng:
+      run: echo 'fail comment'
+    desc: This task comment when labels contains 'good first issue'
 ```
 
 And edit myworkflow.yml.
