@@ -144,14 +144,19 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *target.Target, 
 
 	r.mu.Lock()
 	defer func() {
-		r.revertEnv()
+		_ = r.revertEnv()
 		r.mu.Unlock()
 	}()
 
-	os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", i.Number))
-	os.Setenv("GHDAG_TARGET_URL", i.URL)
-	os.Setenv("GHDAG_TASK_ID", t.Id)
-
+	if err := os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", i.Number)); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_TARGET_URL", i.URL); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_TASK_ID", t.Id); err != nil {
+		return err
+	}
 	if err := r.config.Env.Setenv(); err != nil {
 		return err
 	}
@@ -220,6 +225,6 @@ func (r *Runner) debuglog(m string) {
 	log.Debug().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
 }
 
-func (r *Runner) revertEnv() {
-	env.Revert(r.envCache)
+func (r *Runner) revertEnv() error {
+	return env.Revert(r.envCache)
 }

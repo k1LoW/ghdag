@@ -23,20 +23,27 @@ func (e Env) Setenv() error {
 		if err != nil {
 			return err
 		}
-		os.Setenv(k, parsed)
+		if err := os.Setenv(k, parsed); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func Revert(envCache []string) {
+func Revert(envCache []string) error {
 	for _, e := range os.Environ() {
 		splitted := strings.Split(e, "=")
-		os.Unsetenv(splitted[0])
+		if err := os.Unsetenv(splitted[0]); err != nil {
+			return err
+		}
 	}
 	for _, e := range envCache {
 		splitted := strings.Split(e, "=")
-		os.Setenv(splitted[0], splitted[1])
+		if err := os.Setenv(splitted[0], splitted[1]); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func parseWithEnviron(v string, envMap map[string]string) (string, error) {

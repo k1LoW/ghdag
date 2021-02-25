@@ -11,7 +11,7 @@ func TestMain(m *testing.M) {
 
 	m.Run()
 
-	Revert(envCache)
+	_ = Revert(envCache)
 }
 
 func TestSetenv(t *testing.T) {
