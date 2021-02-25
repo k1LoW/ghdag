@@ -13,6 +13,7 @@ import (
 	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/gh"
 	"github.com/k1LoW/ghdag/slk"
+	"github.com/k1LoW/ghdag/target"
 	"github.com/k1LoW/ghdag/task"
 	"github.com/rs/zerolog/log"
 )
@@ -45,7 +46,7 @@ func New(c *config.Config) (*Runner, error) {
 }
 
 type TaskQueue struct {
-	target *gh.Target
+	target *target.Target
 	task   *task.Task
 	called bool
 }
@@ -85,7 +86,7 @@ L:
 			break
 		}
 
-		n := tq.target.Number()
+		n := tq.target.Number
 		id := tq.task.Id
 		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
 
@@ -107,7 +108,7 @@ L:
 
 		if tq.called {
 			// Update target
-			target, err := r.github.FetchTarget(ctx, tq.target.Number())
+			target, err := r.github.FetchTarget(ctx, tq.target.Number)
 			if err != nil {
 				return err
 			}
@@ -136,7 +137,7 @@ L:
 	return nil
 }
 
-func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *task.Task, q chan TaskQueue) error {
+func (r *Runner) Perform(ctx context.Context, a *task.Action, i *target.Target, t *task.Task, q chan TaskQueue) error {
 	if a == nil {
 		return nil
 	}
@@ -147,8 +148,8 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *t
 		r.mu.Unlock()
 	}()
 
-	os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", i.Number()))
-	os.Setenv("GHDAG_TARGET_URL", i.URL())
+	os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", i.Number))
+	os.Setenv("GHDAG_TARGET_URL", i.URL)
 	os.Setenv("GHDAG_TASK_ID", t.Id)
 
 	if err := r.config.Env.Setenv(); err != nil {
@@ -170,20 +171,20 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *gh.Target, t *t
 		return nil
 	case len(a.Labels) > 0:
 		r.log(fmt.Sprintf("Set labels: %s", strings.Join(a.Labels, ", ")))
-		return r.github.SetLabels(ctx, i.Number(), a.Labels)
+		return r.github.SetLabels(ctx, i.Number, a.Labels)
 	case len(a.Assignees) > 0:
 		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(a.Assignees, ", ")))
-		return r.github.SetAssignees(ctx, i.Number(), a.Assignees)
+		return r.github.SetAssignees(ctx, i.Number, a.Assignees)
 	case a.Comment != "":
 		r.log(fmt.Sprintf("Add comment: %s", a.Comment))
-		return r.github.AddComment(ctx, i.Number(), a.Comment)
+		return r.github.AddComment(ctx, i.Number, a.Comment)
 	case a.State != "":
 		r.log(fmt.Sprintf("Change state: %s", a.State))
 		switch a.State {
 		case "close", "closed":
-			return r.github.CloseIssue(ctx, i.Number())
+			return r.github.CloseIssue(ctx, i.Number)
 		case "merge", "merged":
-			return r.github.MergePullRequest(ctx, i.Number())
+			return r.github.MergePullRequest(ctx, i.Number)
 		default:
 			return fmt.Errorf("invalid state: %s", a.State)
 		}
