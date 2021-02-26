@@ -143,7 +143,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 							Body      githubv4.String
 							CreatedAt githubv4.DateTime
 						}
-					} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"` // TODO detect last comment
+					} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
 				}
 			} `graphql:"pullRequests(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 		} `graphql:"repository(owner: $owner, name: $repo)"`
@@ -175,7 +175,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
 		cc := time.Time{}
-		lastComment := struct {
+		latestComment := struct {
 			Author struct {
 				Login githubv4.String
 			}
@@ -184,7 +184,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		}{}
 		for _, c := range i.Comments.Nodes {
 			if cc.Unix() < c.CreatedAt.Unix() {
-				lastComment = c
+				latestComment = c
 				cc = c.CreatedAt.Time
 			}
 		}
@@ -211,7 +211,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			HoursElapsedSinceCreated: int(now.Sub(i.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(i.Comments.Nodes),
-			LastCommentAuthor:        string(lastComment.Author.Login),
+			LatestCommentAuthor:      string(latestComment.Author.Login),
 		}
 
 		targets[n] = t
@@ -224,7 +224,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
 		}
 		pc := time.Time{}
-		lastComment := struct {
+		latestComment := struct {
 			Author struct {
 				Login githubv4.String
 			}
@@ -233,7 +233,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		}{}
 		for _, c := range p.Comments.Nodes {
 			if pc.Unix() < c.CreatedAt.Unix() {
-				lastComment = c
+				latestComment = c
 				pc = c.CreatedAt.Time
 			}
 		}
@@ -260,7 +260,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(p.Comments.Nodes),
-			LastCommentAuthor:        string(lastComment.Author.Login),
+			LatestCommentAuthor:      string(latestComment.Author.Login),
 		}
 
 		targets[n] = t
@@ -389,7 +389,7 @@ func (c *Client) fetchIssue(ctx context.Context, n int) (*target.Target, error) 
 						Body      githubv4.String
 						CreatedAt githubv4.DateTime
 					}
-				} `graphql:"comments(last: 1)"`
+				} `graphql:"comments(latest: 1)"`
 			} `graphql:"issue(number: $number)"`
 		} `graphql:"repository(owner: $owner, name: $repo)"`
 	}
@@ -464,7 +464,7 @@ func (c *Client) fetchPullRequest(ctx context.Context, n int) (*target.Target, e
 						Body      githubv4.String
 						CreatedAt githubv4.DateTime
 					}
-				} `graphql:"comments(last: 1)"`
+				} `graphql:"comments(latest: 1)"`
 			} `graphql:"pullRequest(number: $number)"`
 		} `graphql:"repository(owner: $owner, name: $repo)"`
 	}
