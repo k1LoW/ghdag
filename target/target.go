@@ -17,6 +17,9 @@ type Target struct {
 	Assignees                []string `json:"assignees"`
 	IsIssue                  bool     `json:"is_issue"`
 	IsPullRequest            bool     `json:"is_pull_request"`
+	IsApproved               bool     `json:"is_approved"`
+	IsReviewRequired         bool     `json:"is_review_required"`
+	IsChangeRequested        bool     `json:"is_change_requested"`
 	HoursElapsedSinceCreated int      `json:"hours_elapsed_since_created"`
 	HoursElapsedSinceUpdated int      `json:"hours_elapsed_since_updated"`
 	NumberOfComments         int      `json:"number_of_comments"`

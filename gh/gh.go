@@ -118,15 +118,16 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 					Author struct {
 						Login githubv4.String
 					}
-					Number       githubv4.Int
-					Title        githubv4.String
-					Body         githubv4.String
-					URL          githubv4.String
-					IsDraft      githubv4.Boolean
-					CreatedAt    githubv4.DateTime
-					UpdatedAt    githubv4.DateTime
-					LastEditedAt githubv4.DateTime
-					Labels       struct {
+					Number         githubv4.Int
+					Title          githubv4.String
+					Body           githubv4.String
+					URL            githubv4.String
+					IsDraft        githubv4.Boolean
+					ReviewDecision githubv4.PullRequestReviewDecision
+					CreatedAt      githubv4.DateTime
+					UpdatedAt      githubv4.DateTime
+					LastEditedAt   githubv4.DateTime
+					Labels         struct {
 						Nodes []struct {
 							Name githubv4.String
 						}
@@ -243,7 +244,17 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 				pc = c.CreatedAt.Time
 			}
 		}
-
+		isApproved := false
+		isReviewRequired := false
+		isChangeRequested := false
+		switch p.ReviewDecision {
+		case githubv4.PullRequestReviewDecisionApproved:
+			isApproved = true
+		case githubv4.PullRequestReviewDecisionReviewRequired:
+			isReviewRequired = true
+		case githubv4.PullRequestReviewDecisionChangesRequested:
+			isChangeRequested = true
+		}
 		labels := []string{}
 		for _, l := range p.Labels.Nodes {
 			labels = append(labels, string(l.Name))
@@ -263,6 +274,9 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			Assignees:                assignees,
 			IsIssue:                  false,
 			IsPullRequest:            true,
+			IsApproved:               isApproved,
+			IsReviewRequired:         isReviewRequired,
+			IsChangeRequested:        isChangeRequested,
 			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(p.Comments.Nodes),
@@ -445,14 +459,15 @@ func (c *Client) fetchPullRequest(ctx context.Context, n int) (*target.Target, e
 				Author struct {
 					Login githubv4.String
 				}
-				Number       githubv4.Int
-				Title        githubv4.String
-				Body         githubv4.String
-				URL          githubv4.String
-				CreatedAt    githubv4.DateTime
-				UpdatedAt    githubv4.DateTime
-				LastEditedAt githubv4.DateTime
-				Labels       struct {
+				Number         githubv4.Int
+				Title          githubv4.String
+				Body           githubv4.String
+				URL            githubv4.String
+				ReviewDecision githubv4.PullRequestReviewDecision
+				CreatedAt      githubv4.DateTime
+				UpdatedAt      githubv4.DateTime
+				LastEditedAt   githubv4.DateTime
+				Labels         struct {
 					Nodes []struct {
 						Name githubv4.String
 					}
@@ -487,6 +502,17 @@ func (c *Client) fetchPullRequest(ctx context.Context, n int) (*target.Target, e
 	now := time.Now()
 
 	p := q.Repogitory.PullRequest
+	isApproved := false
+	isReviewRequired := false
+	isChangeRequested := false
+	switch p.ReviewDecision {
+	case githubv4.PullRequestReviewDecisionApproved:
+		isApproved = true
+	case githubv4.PullRequestReviewDecisionReviewRequired:
+		isReviewRequired = true
+	case githubv4.PullRequestReviewDecisionChangesRequested:
+		isChangeRequested = true
+	}
 	labels := []string{}
 	for _, l := range p.Labels.Nodes {
 		labels = append(labels, string(l.Name))
@@ -506,6 +532,9 @@ func (c *Client) fetchPullRequest(ctx context.Context, n int) (*target.Target, e
 		Assignees:                assignees,
 		IsIssue:                  false,
 		IsPullRequest:            true,
+		IsApproved:               isApproved,
+		IsReviewRequired:         isReviewRequired,
+		IsChangeRequested:        isChangeRequested,
 		HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
 		HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 	}
