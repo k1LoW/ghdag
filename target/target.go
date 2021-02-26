@@ -19,6 +19,8 @@ type Target struct {
 	IsPullRequest            bool     `json:"is_pull_request"`
 	HoursElapsedSinceCreated int      `json:"hours_elapsed_since_created"`
 	HoursElapsedSinceUpdated int      `json:"hours_elapsed_since_updated"`
+	NumberOfComments         int      `json:"number_of_comments"`
+	LastCommentAuthor        string   `json:"last_comment_author"`
 }
 
 func (t *Target) Dump() map[string]interface{} {

@@ -110,9 +110,9 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 							Body      githubv4.String
 							CreatedAt githubv4.DateTime
 						}
-					} `graphql:"comments(last: 1)"`
+					} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
 				}
-			} `graphql:"issues(last: $limit, states: OPEN)"`
+			} `graphql:"issues(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 			PullRequests struct {
 				Nodes []struct {
 					Author struct {
@@ -143,9 +143,9 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 							Body      githubv4.String
 							CreatedAt githubv4.DateTime
 						}
-					} `graphql:"comments(last: 1)"`
+					} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"` // TODO detect last comment
 				}
-			} `graphql:"pullRequests(last: $limit, states: OPEN)"`
+			} `graphql:"pullRequests(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 		} `graphql:"repository(owner: $owner, name: $repo)"`
 	}
 	variables := map[string]interface{}{
@@ -159,16 +159,36 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	}
 
 	if len(q.Repogitory.Issues.Nodes) > limit {
-		return nil, fmt.Errorf("too many opened issues (limit :%d)", limit)
+		return nil, fmt.Errorf("too many opened issues (limit: %d)", limit)
 	}
 
 	if len(q.Repogitory.PullRequests.Nodes) > limit {
-		return nil, fmt.Errorf("too many opened pull requests (limit :%d)", limit)
+		return nil, fmt.Errorf("too many opened pull requests (limit: %d)", limit)
 	}
 
 	now := time.Now()
 
 	for _, i := range q.Repogitory.Issues.Nodes {
+		n := int(i.Number)
+
+		if len(i.Comments.Nodes) > limit {
+			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
+		}
+		cc := time.Time{}
+		lastComment := struct {
+			Author struct {
+				Login githubv4.String
+			}
+			Body      githubv4.String
+			CreatedAt githubv4.DateTime
+		}{}
+		for _, c := range i.Comments.Nodes {
+			if cc.Unix() < c.CreatedAt.Unix() {
+				lastComment = c
+				cc = c.CreatedAt.Time
+			}
+		}
+
 		labels := []string{}
 		for _, l := range i.Labels.Nodes {
 			labels = append(labels, string(l.Name))
@@ -178,7 +198,6 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			assignees = append(assignees, string(a.Login))
 		}
 
-		n := int(i.Number)
 		t := &target.Target{
 			Number:                   n,
 			Title:                    string(i.Title),
@@ -191,12 +210,34 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			IsPullRequest:            false,
 			HoursElapsedSinceCreated: int(now.Sub(i.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
+			NumberOfComments:         len(i.Comments.Nodes),
+			LastCommentAuthor:        string(lastComment.Author.Login),
 		}
 
 		targets[n] = t
 	}
 
 	for _, p := range q.Repogitory.PullRequests.Nodes {
+		n := int(p.Number)
+
+		if len(p.Comments.Nodes) > limit {
+			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
+		}
+		pc := time.Time{}
+		lastComment := struct {
+			Author struct {
+				Login githubv4.String
+			}
+			Body      githubv4.String
+			CreatedAt githubv4.DateTime
+		}{}
+		for _, c := range p.Comments.Nodes {
+			if pc.Unix() < c.CreatedAt.Unix() {
+				lastComment = c
+				pc = c.CreatedAt.Time
+			}
+		}
+
 		labels := []string{}
 		for _, l := range p.Labels.Nodes {
 			labels = append(labels, string(l.Name))
@@ -206,7 +247,6 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			assignees = append(assignees, string(a.Login))
 		}
 
-		n := int(p.Number)
 		t := &target.Target{
 			Number:                   n,
 			Title:                    string(p.Title),
@@ -219,6 +259,8 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			IsPullRequest:            true,
 			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
+			NumberOfComments:         len(p.Comments.Nodes),
+			LastCommentAuthor:        string(lastComment.Author.Login),
 		}
 
 		targets[n] = t
