@@ -122,6 +122,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 					Title        githubv4.String
 					Body         githubv4.String
 					URL          githubv4.String
+					IsDraft      githubv4.Boolean
 					CreatedAt    githubv4.DateTime
 					UpdatedAt    githubv4.DateTime
 					LastEditedAt githubv4.DateTime
@@ -219,6 +220,11 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 
 	for _, p := range q.Repogitory.PullRequests.Nodes {
 		n := int(p.Number)
+
+		if bool(p.IsDraft) {
+			// Skip draft pull request
+			continue
+		}
 
 		if len(p.Comments.Nodes) > limit {
 			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
