@@ -32,7 +32,6 @@ And edit myworkflow.yml.
 ``` console
 $ export GITHUB_TOKEN=xxXxXXxxXXxx
 $ export GITHUB_REPOGITORY=k1LoW/myrepo
-$ export SLACK_API_TOKEN=xoxb-xXXxxXXXxxXXXxXXXxxxxxxx
 $ ghdag run myworkflow.yml
 ```
 
