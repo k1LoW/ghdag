@@ -21,6 +21,7 @@ type Target struct {
 	IsApproved               bool     `json:"is_approved"`
 	IsReviewRequired         bool     `json:"is_review_required"`
 	IsChangeRequested        bool     `json:"is_change_requested"`
+	Mergeable                bool     `json:"mergeable"`
 	HoursElapsedSinceCreated int      `json:"hours_elapsed_since_created"`
 	HoursElapsedSinceUpdated int      `json:"hours_elapsed_since_updated"`
 	NumberOfComments         int      `json:"number_of_comments"`
