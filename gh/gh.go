@@ -122,11 +122,18 @@ type pullRequestNode struct {
 	ReviewDecision githubv4.PullRequestReviewDecision
 	ReviewRequests struct {
 		Nodes []struct {
-			AsCodeOwner     githubv4.Boolean
-			RequestReviewer struct {
+			AsCodeOwner       githubv4.Boolean
+			RequestedReviewer struct {
 				User struct {
 					Login githubv4.String
 				} `graphql:"... on User"`
+				Team struct {
+					Members struct {
+						Nodes []struct {
+							Login githubv4.String
+						}
+					}
+				} `graphql:"... on Team"`
 			}
 		}
 	} `graphql:"reviewRequests(first: 100)"`
@@ -291,7 +298,10 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		}
 		reviewers := []string{}
 		for _, r := range p.ReviewRequests.Nodes {
-			reviewers = append(reviewers, string(r.RequestReviewer.User.Login))
+			reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
+			for _, m := range r.RequestedReviewer.Team.Members.Nodes {
+				reviewers = append(reviewers, string(m.Login))
+			}
 		}
 
 		t := &target.Target{
@@ -433,7 +443,10 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		}
 		reviewers := []string{}
 		for _, r := range p.ReviewRequests.Nodes {
-			reviewers = append(reviewers, string(r.RequestReviewer.User.Login))
+			reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
+			for _, m := range r.RequestedReviewer.Team.Members.Nodes {
+				reviewers = append(reviewers, string(m.Login))
+			}
 		}
 
 		t := &target.Target{
@@ -468,26 +481,10 @@ func (c *Client) SetLabels(ctx context.Context, n int, labels []string) error {
 }
 
 func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) error {
-	as := []string{}
-	for _, a := range assignees {
-		trimed := strings.Trim(a, "@")
-		if !strings.Contains(trimed, "/") {
-			as = append(as, trimed)
-			continue
-		}
-		splitted := strings.Split(trimed, "/")
-		org := splitted[0]
-		slug := splitted[1]
-		opts := &github.TeamListTeamMembersOptions{}
-		users, _, err := c.v3.Teams.ListTeamMembersBySlug(ctx, org, slug, opts)
-		if err != nil {
-			return err
-		}
-		for _, u := range users {
-			as = append(as, *u.Login)
-		}
+	as, err := c.users(ctx, assignees)
+	if err != nil {
+		return err
 	}
-	as = unique(as)
 
 	if os.Getenv("GITHUB_ASSIGNEES_SAMPLE") != "" {
 		sn, err := strconv.Atoi(os.Getenv("GITHUB_ASSIGNEES_SAMPLE"))
@@ -501,10 +498,80 @@ func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) er
 		}
 	}
 
-	_, _, err := c.v3.Issues.Edit(ctx, c.owner, c.repo, n, &github.IssueRequest{
+	if _, _, err := c.v3.Issues.Edit(ctx, c.owner, c.repo, n, &github.IssueRequest{
 		Assignees: &as,
-	})
-	return err
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) error {
+	if os.Getenv("GITHUB_REVIEWERS_SAMPLE") != "" {
+		sn, err := strconv.Atoi(os.Getenv("GITHUB_REVIEWERS_SAMPLE"))
+		if err != nil {
+			return err
+		}
+		if len(reviewers) < sn {
+			rand.Seed(time.Now().UnixNano())
+			rand.Shuffle(len(reviewers), func(i, j int) { reviewers[i], reviewers[j] = reviewers[j], reviewers[i] })
+			reviewers = reviewers[:sn]
+		}
+	}
+
+	ru := map[string]struct{}{}
+	rt := map[string]struct{}{}
+	for _, r := range reviewers {
+		trimed := strings.Trim(r, "@")
+		if strings.Contains(trimed, "/") {
+			rt[trimed] = struct{}{}
+			continue
+		}
+		ru[trimed] = struct{}{}
+	}
+	current, _, err := c.v3.PullRequests.ListReviewers(ctx, c.owner, c.repo, n, &github.ListOptions{})
+	if err != nil {
+		return err
+	}
+	du := []string{}
+	dt := []string{}
+	for _, u := range current.Users {
+		if _, ok := ru[u.GetLogin()]; ok {
+			delete(ru, u.GetLogin())
+			continue
+		}
+		du = append(du, u.GetLogin())
+	}
+	for _, t := range current.Teams {
+		if _, ok := rt[t.GetName()]; ok {
+			delete(rt, t.GetName())
+			continue
+		}
+		dt = append(dt, t.GetName())
+	}
+	if len(du) > 0 || len(dt) > 0 {
+		if _, err := c.v3.PullRequests.RemoveReviewers(ctx, c.owner, c.repo, n, github.ReviewersRequest{
+			Reviewers:     du,
+			TeamReviewers: dt,
+		}); err != nil {
+			return err
+		}
+	}
+	au := []string{}
+	at := []string{}
+	for k := range ru {
+		au = append(au, k)
+	}
+	for k := range rt {
+		at = append(at, k)
+	}
+	if _, _, err := c.v3.PullRequests.RequestReviewers(ctx, c.owner, c.repo, n, github.ReviewersRequest{
+		Reviewers:     au,
+		TeamReviewers: at,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) AddComment(ctx context.Context, n int, comment string) error {
@@ -525,6 +592,29 @@ func (c *Client) CloseIssue(ctx context.Context, n int) error {
 func (c *Client) MergePullRequest(ctx context.Context, n int) error {
 	_, _, err := c.v3.PullRequests.Merge(ctx, c.owner, c.repo, n, "", &github.PullRequestOptions{})
 	return err
+}
+
+func (c *Client) users(ctx context.Context, in []string) ([]string, error) {
+	res := []string{}
+	for _, inu := range in {
+		trimed := strings.Trim(inu, "@")
+		if !strings.Contains(trimed, "/") {
+			res = append(res, trimed)
+			continue
+		}
+		splitted := strings.Split(trimed, "/")
+		org := splitted[0]
+		slug := splitted[1]
+		opts := &github.TeamListTeamMembersOptions{}
+		users, _, err := c.v3.Teams.ListTeamMembersBySlug(ctx, org, slug, opts)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range users {
+			res = append(res, *u.Login)
+		}
+	}
+	return unique(res), nil
 }
 
 type roundTripper struct {
@@ -552,6 +642,15 @@ func httpClient(token string) *http.Client {
 		Timeout:   time.Second * 10,
 		Transport: rt,
 	}
+}
+
+func contains(s []string, e string) bool {
+	for _, v := range s {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }
 
 func unique(in []string) []string {
