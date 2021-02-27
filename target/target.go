@@ -25,6 +25,7 @@ type Target struct {
 	HoursElapsedSinceUpdated int      `json:"hours_elapsed_since_updated"`
 	NumberOfComments         int      `json:"number_of_comments"`
 	LatestCommentAuthor      string   `json:"latest_comment_author"`
+	LatestCommentBody        string   `json:"latest_comment_body"`
 }
 
 func (t *Target) Dump() map[string]interface{} {

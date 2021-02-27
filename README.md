@@ -82,6 +82,7 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `hours_elapsed_since_updated` | `int` | Hours elspsed since the issue (pull request) updated |
 | `number_of_comments` | `int` | Number of comments |
 | `latest_comment_author` | `string` | Author of latest comment |
+| `latest_comment_body` | `string` | Body of latest comment |
 
 #### Environment variables in the scope of each task (`tasks[*].env:`)
 

@@ -79,14 +79,13 @@ type issueNode struct {
 	Author struct {
 		Login githubv4.String
 	}
-	Number       githubv4.Int
-	Title        githubv4.String
-	Body         githubv4.String
-	URL          githubv4.String
-	CreatedAt    githubv4.DateTime
-	UpdatedAt    githubv4.DateTime
-	LastEditedAt githubv4.DateTime
-	Labels       struct {
+	Number    githubv4.Int
+	Title     githubv4.String
+	Body      githubv4.String
+	URL       githubv4.String
+	CreatedAt githubv4.DateTime
+	UpdatedAt githubv4.DateTime
+	Labels    struct {
 		Nodes []struct {
 			Name githubv4.String
 		}
@@ -137,10 +136,9 @@ type pullRequestNode struct {
 			}
 		}
 	} `graphql:"reviewRequests(first: 100)"`
-	CreatedAt    githubv4.DateTime
-	UpdatedAt    githubv4.DateTime
-	LastEditedAt githubv4.DateTime
-	Labels       struct {
+	CreatedAt githubv4.DateTime
+	UpdatedAt githubv4.DateTime
+	Labels    struct {
 		Nodes []struct {
 			Name githubv4.String
 		}
@@ -247,6 +245,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(i.Comments.Nodes),
 			LatestCommentAuthor:      string(latestComment.Author.Login),
+			LatestCommentBody:        string(latestComment.Body),
 		}
 
 		targets[n] = t
@@ -322,6 +321,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(p.Comments.Nodes),
 			LatestCommentAuthor:      string(latestComment.Author.Login),
+			LatestCommentBody:        string(latestComment.Body),
 		}
 
 		targets[n] = t
@@ -398,6 +398,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(i.Comments.Nodes),
 			LatestCommentAuthor:      string(latestComment.Author.Login),
+			LatestCommentBody:        string(latestComment.Body),
 		}
 		return t, nil
 	} else {
@@ -467,6 +468,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(p.Comments.Nodes),
 			LatestCommentAuthor:      string(latestComment.Author.Login),
+			LatestCommentBody:        string(latestComment.Body),
 		}
 
 		return t, nil
