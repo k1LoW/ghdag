@@ -18,6 +18,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const limit = 99
+
 type Client struct {
 	v3    *github.Client
 	v4    *githubv4.Client
@@ -73,80 +75,82 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
+type issueNode struct {
+	Author struct {
+		Login githubv4.String
+	}
+	Number       githubv4.Int
+	Title        githubv4.String
+	Body         githubv4.String
+	URL          githubv4.String
+	CreatedAt    githubv4.DateTime
+	UpdatedAt    githubv4.DateTime
+	LastEditedAt githubv4.DateTime
+	Labels       struct {
+		Nodes []struct {
+			Name githubv4.String
+		}
+	} `graphql:"labels(first: 100)"`
+	Assignees struct {
+		Nodes []struct {
+			Login githubv4.String
+		}
+	} `graphql:"assignees(first: 100)"`
+	Comments struct {
+		Nodes []struct {
+			Author struct {
+				Login githubv4.String
+			}
+			Body      githubv4.String
+			CreatedAt githubv4.DateTime
+		}
+	} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
+}
+
+type pullRequestNode struct {
+	Author struct {
+		Login githubv4.String
+	}
+	Number         githubv4.Int
+	Title          githubv4.String
+	Body           githubv4.String
+	URL            githubv4.String
+	IsDraft        githubv4.Boolean
+	ReviewDecision githubv4.PullRequestReviewDecision
+	CreatedAt      githubv4.DateTime
+	UpdatedAt      githubv4.DateTime
+	LastEditedAt   githubv4.DateTime
+	Labels         struct {
+		Nodes []struct {
+			Name githubv4.String
+		}
+	} `graphql:"labels(first: 100)"`
+	Assignees struct {
+		Nodes []struct {
+			Login githubv4.String
+		}
+	} `graphql:"assignees(first: 100)"`
+	Comments struct {
+		Nodes []struct {
+			Author struct {
+				Login githubv4.String
+			}
+			Body      githubv4.String
+			CreatedAt githubv4.DateTime
+		}
+	} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
+}
+
 func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	targets := target.Targets{}
-
-	limit := 99
 
 	var q struct {
 		Repogitory struct {
 			Issues struct {
-				Nodes []struct {
-					Author struct {
-						Login githubv4.String
-					}
-					Number       githubv4.Int
-					Title        githubv4.String
-					Body         githubv4.String
-					URL          githubv4.String
-					CreatedAt    githubv4.DateTime
-					UpdatedAt    githubv4.DateTime
-					LastEditedAt githubv4.DateTime
-					Labels       struct {
-						Nodes []struct {
-							Name githubv4.String
-						}
-					} `graphql:"labels(first: 100)"`
-					Assignees struct {
-						Nodes []struct {
-							Login githubv4.String
-						}
-					} `graphql:"assignees(first: 100)"`
-					Comments struct {
-						Nodes []struct {
-							Author struct {
-								Login githubv4.String
-							}
-							Body      githubv4.String
-							CreatedAt githubv4.DateTime
-						}
-					} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
-				}
+				Nodes []issueNode
 			} `graphql:"issues(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 			PullRequests struct {
-				Nodes []struct {
-					Author struct {
-						Login githubv4.String
-					}
-					Number         githubv4.Int
-					Title          githubv4.String
-					Body           githubv4.String
-					URL            githubv4.String
-					IsDraft        githubv4.Boolean
-					ReviewDecision githubv4.PullRequestReviewDecision
-					CreatedAt      githubv4.DateTime
-					UpdatedAt      githubv4.DateTime
-					LastEditedAt   githubv4.DateTime
-					Labels         struct {
-						Nodes []struct {
-							Name githubv4.String
-						}
-					} `graphql:"labels(first: 100)"`
-					Assignees struct {
-						Nodes []struct {
-							Login githubv4.String
-						}
-					} `graphql:"assignees(first: 100)"`
-					Comments struct {
-						Nodes []struct {
-							Author struct {
-								Login githubv4.String
-							}
-							Body      githubv4.String
-							CreatedAt githubv4.DateTime
-						}
-					} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
-				}
+				Nodes []pullRequestNode
 			} `graphql:"pullRequests(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 		} `graphql:"repository(owner: $owner, name: $repo)"`
 	}
@@ -290,14 +294,138 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 }
 
 func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error) {
-	i, _, err := c.v3.Issues.Get(ctx, c.owner, c.repo, n)
-	if err != nil {
+	var q struct {
+		Repogitory struct {
+			IssueOrPullRequest struct {
+				Issue       issueNode       `graphql:"... on Issue"`
+				PullRequest pullRequestNode `graphql:"... on PullRequest"`
+			} `graphql:"issueOrPullRequest(number: $number)"`
+		} `graphql:"repository(owner: $owner, name: $repo)"`
+	}
+	variables := map[string]interface{}{
+		"owner":  githubv4.String(c.owner),
+		"repo":   githubv4.String(c.repo),
+		"number": githubv4.Int(n),
+		"limit":  githubv4.Int(limit + 1),
+	}
+
+	if err := c.v4.Query(ctx, &q, variables); err != nil {
 		return nil, err
 	}
-	if i.IsPullRequest() {
-		return c.fetchPullRequest(ctx, n)
+
+	now := time.Now()
+
+	if strings.Contains(string(q.Repogitory.IssueOrPullRequest.Issue.URL), "/issues/") {
+		// Issue
+		i := q.Repogitory.IssueOrPullRequest.Issue
+		n := int(i.Number)
+
+		if len(i.Comments.Nodes) > limit {
+			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
+		}
+		cc := time.Time{}
+		latestComment := struct {
+			Author struct {
+				Login githubv4.String
+			}
+			Body      githubv4.String
+			CreatedAt githubv4.DateTime
+		}{}
+		for _, c := range i.Comments.Nodes {
+			if cc.Unix() < c.CreatedAt.Unix() {
+				latestComment = c
+				cc = c.CreatedAt.Time
+			}
+		}
+
+		labels := []string{}
+		for _, l := range i.Labels.Nodes {
+			labels = append(labels, string(l.Name))
+		}
+		assignees := []string{}
+		for _, a := range i.Assignees.Nodes {
+			assignees = append(assignees, string(a.Login))
+		}
+
+		t := &target.Target{
+			Number:                   n,
+			Title:                    string(i.Title),
+			Body:                     string(i.Body),
+			URL:                      string(i.URL),
+			Author:                   string(i.Author.Login),
+			Labels:                   labels,
+			Assignees:                assignees,
+			IsIssue:                  true,
+			IsPullRequest:            false,
+			HoursElapsedSinceCreated: int(now.Sub(i.CreatedAt.Time).Hours()),
+			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
+			NumberOfComments:         len(i.Comments.Nodes),
+			LatestCommentAuthor:      string(latestComment.Author.Login),
+		}
+		return t, nil
+	} else {
+		// Pull request
+		p := q.Repogitory.IssueOrPullRequest.PullRequest
+		n := int(p.Number)
+
+		if len(p.Comments.Nodes) > limit {
+			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
+		}
+		pc := time.Time{}
+		latestComment := struct {
+			Author struct {
+				Login githubv4.String
+			}
+			Body      githubv4.String
+			CreatedAt githubv4.DateTime
+		}{}
+		for _, c := range p.Comments.Nodes {
+			if pc.Unix() < c.CreatedAt.Unix() {
+				latestComment = c
+				pc = c.CreatedAt.Time
+			}
+		}
+		isApproved := false
+		isReviewRequired := false
+		isChangeRequested := false
+		switch p.ReviewDecision {
+		case githubv4.PullRequestReviewDecisionApproved:
+			isApproved = true
+		case githubv4.PullRequestReviewDecisionReviewRequired:
+			isReviewRequired = true
+		case githubv4.PullRequestReviewDecisionChangesRequested:
+			isChangeRequested = true
+		}
+		labels := []string{}
+		for _, l := range p.Labels.Nodes {
+			labels = append(labels, string(l.Name))
+		}
+		assignees := []string{}
+		for _, a := range p.Assignees.Nodes {
+			assignees = append(assignees, string(a.Login))
+		}
+
+		t := &target.Target{
+			Number:                   n,
+			Title:                    string(p.Title),
+			Body:                     string(p.Body),
+			URL:                      string(p.URL),
+			Author:                   string(p.Author.Login),
+			Labels:                   labels,
+			Assignees:                assignees,
+			IsIssue:                  false,
+			IsPullRequest:            true,
+			IsApproved:               isApproved,
+			IsReviewRequired:         isReviewRequired,
+			IsChangeRequested:        isChangeRequested,
+			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
+			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
+			NumberOfComments:         len(p.Comments.Nodes),
+			LatestCommentAuthor:      string(latestComment.Author.Login),
+		}
+
+		return t, nil
 	}
-	return c.fetchIssue(ctx, n)
 }
 
 func (c *Client) SetLabels(ctx context.Context, n int, labels []string) error {
@@ -375,171 +503,6 @@ type roundTripper struct {
 func (rt roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Set("Authorization", fmt.Sprintf("token %s", rt.accessToken))
 	return rt.transport.RoundTrip(r)
-}
-
-func (c *Client) fetchIssue(ctx context.Context, n int) (*target.Target, error) {
-	var q struct {
-		Repogitory struct {
-			Issue struct {
-				Author struct {
-					Login githubv4.String
-				}
-				Number       githubv4.Int
-				Title        githubv4.String
-				Body         githubv4.String
-				URL          githubv4.String
-				CreatedAt    githubv4.DateTime
-				UpdatedAt    githubv4.DateTime
-				LastEditedAt githubv4.DateTime
-				Labels       struct {
-					Nodes []struct {
-						Name githubv4.String
-					}
-				} `graphql:"labels(first: 100)"`
-				Assignees struct {
-					Nodes []struct {
-						Login githubv4.String
-					}
-				} `graphql:"assignees(first: 100)"`
-				Comments struct {
-					Nodes []struct {
-						Author struct {
-							Login githubv4.String
-						}
-						Body      githubv4.String
-						CreatedAt githubv4.DateTime
-					}
-				} `graphql:"comments(latest: 1)"`
-			} `graphql:"issue(number: $number)"`
-		} `graphql:"repository(owner: $owner, name: $repo)"`
-	}
-	variables := map[string]interface{}{
-		"owner":  githubv4.String(c.owner),
-		"repo":   githubv4.String(c.repo),
-		"number": githubv4.Int(n),
-	}
-
-	if err := c.v4.Query(ctx, &q, variables); err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-
-	i := q.Repogitory.Issue
-	labels := []string{}
-	for _, l := range i.Labels.Nodes {
-		labels = append(labels, string(l.Name))
-	}
-	assignees := []string{}
-	for _, a := range i.Assignees.Nodes {
-		assignees = append(assignees, string(a.Login))
-	}
-
-	t := &target.Target{
-		Number:                   int(i.Number),
-		Title:                    string(i.Title),
-		Body:                     string(i.Body),
-		URL:                      string(i.URL),
-		Author:                   string(i.Author.Login),
-		Labels:                   labels,
-		Assignees:                assignees,
-		IsIssue:                  true,
-		IsPullRequest:            false,
-		HoursElapsedSinceCreated: int(now.Sub(i.CreatedAt.Time).Hours()),
-		HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
-	}
-
-	return t, nil
-}
-
-func (c *Client) fetchPullRequest(ctx context.Context, n int) (*target.Target, error) {
-	var q struct {
-		Repogitory struct {
-			PullRequest struct {
-				Author struct {
-					Login githubv4.String
-				}
-				Number         githubv4.Int
-				Title          githubv4.String
-				Body           githubv4.String
-				URL            githubv4.String
-				ReviewDecision githubv4.PullRequestReviewDecision
-				CreatedAt      githubv4.DateTime
-				UpdatedAt      githubv4.DateTime
-				LastEditedAt   githubv4.DateTime
-				Labels         struct {
-					Nodes []struct {
-						Name githubv4.String
-					}
-				} `graphql:"labels(first: 100)"`
-				Assignees struct {
-					Nodes []struct {
-						Login githubv4.String
-					}
-				} `graphql:"assignees(first: 100)"`
-				Comments struct {
-					Nodes []struct {
-						Author struct {
-							Login githubv4.String
-						}
-						Body      githubv4.String
-						CreatedAt githubv4.DateTime
-					}
-				} `graphql:"comments(latest: 1)"`
-			} `graphql:"pullRequest(number: $number)"`
-		} `graphql:"repository(owner: $owner, name: $repo)"`
-	}
-	variables := map[string]interface{}{
-		"owner":  githubv4.String(c.owner),
-		"repo":   githubv4.String(c.repo),
-		"number": githubv4.Int(n),
-	}
-
-	if err := c.v4.Query(ctx, &q, variables); err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-
-	p := q.Repogitory.PullRequest
-	isApproved := false
-	isReviewRequired := false
-	isChangeRequested := false
-	switch p.ReviewDecision {
-	case githubv4.PullRequestReviewDecisionApproved:
-		isApproved = true
-	case githubv4.PullRequestReviewDecisionReviewRequired:
-		isReviewRequired = true
-	case githubv4.PullRequestReviewDecisionChangesRequested:
-		isChangeRequested = true
-	}
-	labels := []string{}
-	for _, l := range p.Labels.Nodes {
-		labels = append(labels, string(l.Name))
-	}
-	assignees := []string{}
-	for _, a := range p.Assignees.Nodes {
-		assignees = append(assignees, string(a.Login))
-	}
-
-	t := &target.Target{
-		Number:                   int(p.Number),
-		Title:                    string(p.Title),
-		Body:                     string(p.Body),
-		URL:                      string(p.URL),
-		Author:                   string(p.Author.Login),
-		Labels:                   labels,
-		Assignees:                assignees,
-		IsIssue:                  false,
-		IsPullRequest:            true,
-		IsApproved:               isApproved,
-		IsReviewRequired:         isReviewRequired,
-		IsChangeRequested:        isChangeRequested,
-		HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
-		HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
-	}
-
-	return t, nil
 }
 
 func httpClient(token string) *http.Client {
