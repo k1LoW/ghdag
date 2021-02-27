@@ -12,15 +12,16 @@ import (
 
 type Client struct {
 	client         *slack.Client
-	channelCache   map[string]*slack.Channel
-	userCache      map[string]*slack.User
-	userGroupCache map[string]*slack.UserGroup
+	channelCache   map[string]slack.Channel
+	userCache      map[string]slack.User
+	userGroupCache map[string]slack.UserGroup
 }
 
 func NewClient() (*Client, error) {
 	c := &Client{
-		channelCache: map[string]*slack.Channel{},
-		userCache:    map[string]*slack.User{},
+		channelCache:   map[string]slack.Channel{},
+		userCache:      map[string]slack.User{},
+		userGroupCache: map[string]slack.UserGroup{},
 	}
 	if os.Getenv("SLACK_API_TOKEN") != "" {
 		c.client = slack.New(os.Getenv("SLACK_API_TOKEN"))
@@ -58,8 +59,8 @@ func (c *Client) postMessage(ctx context.Context, m string) error {
 	if os.Getenv("SLACK_MENTIONS") != "" {
 		mentions := strings.Split(os.Getenv("SLACK_MENTIONS"), " ")
 		links := []string{}
-		for _, m := range mentions {
-			l, err := c.getMentionLinkByName(ctx, m)
+		for _, mention := range mentions {
+			l, err := c.getMentionLinkByName(ctx, mention)
 			if err != nil {
 				return err
 			}
@@ -104,7 +105,7 @@ L:
 			return "", err
 		}
 		for _, cc := range ch {
-			c.channelCache[channel] = &cc
+			c.channelCache[channel] = cc
 			if cc.Name == channel {
 				cID = cc.ID
 				break L
@@ -140,8 +141,9 @@ func (c *Client) getMentionLinkByName(ctx context.Context, name string) (string,
 	if err != nil {
 		return "", err
 	}
+
 	for _, u := range users {
-		c.userCache[u.Name] = &u
+		c.userCache[u.Name] = u
 	}
 	uc, ok := c.userCache[name]
 	if ok {
@@ -153,7 +155,7 @@ func (c *Client) getMentionLinkByName(ctx context.Context, name string) (string,
 		return "", err
 	}
 	for _, g := range groups {
-		c.userGroupCache[g.Handle] = &g
+		c.userGroupCache[g.Handle] = g
 	}
 	gc, ok := c.userGroupCache[name]
 	if ok {
