@@ -94,6 +94,8 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 
 #### Action: Update assignees (`tasks[*].<action_type>.assignees:`)
 
+#### Action: Update reviewers (`tasks[*].<action_type>.reviewers:`)
+
 #### Action: Add comment (`tasks[*].<action_type>.comment:`)
 
 #### Action: Change state (`tasks[*].<action_type>.state:`)

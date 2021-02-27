@@ -180,6 +180,9 @@ func (r *Runner) Perform(ctx context.Context, a *task.Action, i *target.Target, 
 	case len(a.Assignees) > 0:
 		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(a.Assignees, ", ")))
 		return r.github.SetAssignees(ctx, i.Number, a.Assignees)
+	case len(a.Reviewers) > 0:
+		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(a.Reviewers, ", ")))
+		return r.github.SetReviewers(ctx, i.Number, a.Reviewers)
 	case a.Comment != "":
 		r.log(fmt.Sprintf("Add comment: %s", a.Comment))
 		return r.github.AddComment(ctx, i.Number, a.Comment)

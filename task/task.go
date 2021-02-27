@@ -82,6 +82,9 @@ func (t *Task) CheckActionSyntax(a *Action) (bool, []string) {
 	if len(a.Assignees) > 0 {
 		c++
 	}
+	if len(a.Reviewers) > 0 {
+		c++
+	}
 	if a.Comment != "" {
 		c++
 	}

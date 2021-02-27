@@ -19,6 +19,7 @@ type Action struct {
 	Run       string     `yaml:"run,omitempty"`
 	Labels    []string   `yaml:"labels,omitempty"`
 	Assignees []string   `yaml:"assignees,omitempty"`
+	Reviewers []string   `yaml:"reviewers,omitempty"`
 	Comment   string     `yaml:"comment,omitempty"`
 	State     string     `yaml:"state,omitempty"`
 	Notify    string     `yaml:"notify,omitempty"`
