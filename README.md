@@ -109,6 +109,7 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `GITHUB_TOKEN` | A GitHub access token. | - |
 | `GITHUB_REPOSITORY` | The owner and repository name | `owner/repo` of the repository where GitHub Actions are running |
 | `GITHUB_API_URL` | The GitHub API URL | `https://api.github.com` |
+| `GITHUB_GRAPHQL_URL` | The GitHub GraphQL API URL | `https://api.github.com/graphql` |
 | `SLACK_API_TOKEN` | A Slack OAuth access token | - |
 | `SLACK_WEBHOOK_URL` | A Slack incoming webhook URL | - |
 | `SLACK_CHANNEL` | A notify Slack channel | - |
