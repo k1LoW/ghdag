@@ -118,6 +118,7 @@ type pullRequestNode struct {
 	Body           githubv4.String
 	URL            githubv4.String
 	IsDraft        githubv4.Boolean
+	Mergeable      githubv4.MergeableState
 	ReviewDecision githubv4.PullRequestReviewDecision
 	ReviewRequests struct {
 		Nodes []struct {
@@ -287,6 +288,11 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		case githubv4.PullRequestReviewDecisionChangesRequested:
 			isChangeRequested = true
 		}
+		mergeable := false
+		if p.Mergeable == githubv4.MergeableStateMergeable {
+			mergeable = true
+		}
+
 		labels := []string{}
 		for _, l := range p.Labels.Nodes {
 			labels = append(labels, string(l.Name))
@@ -317,6 +323,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			IsApproved:               isApproved,
 			IsReviewRequired:         isReviewRequired,
 			IsChangeRequested:        isChangeRequested,
+			Mergeable:                mergeable,
 			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(p.Comments.Nodes),
@@ -434,6 +441,10 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		case githubv4.PullRequestReviewDecisionChangesRequested:
 			isChangeRequested = true
 		}
+		mergeable := false
+		if p.Mergeable == githubv4.MergeableStateMergeable {
+			mergeable = true
+		}
 		labels := []string{}
 		for _, l := range p.Labels.Nodes {
 			labels = append(labels, string(l.Name))
@@ -464,6 +475,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 			IsApproved:               isApproved,
 			IsReviewRequired:         isReviewRequired,
 			IsChangeRequested:        isChangeRequested,
+			Mergeable:                mergeable,
 			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
 			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
 			NumberOfComments:         len(p.Comments.Nodes),
