@@ -57,14 +57,14 @@ var initCmd = &cobra.Command{
 tasks:
   -
     id: sample-task
-    if: '"good first issue" in labels'
+    if: 'is_issue && len(labels) == 0 && title endsWith "?"'
     do:
-      comment: 'Good :+1:'
+      labels: [question]
     ok:
-      run: echo 'commented'
+      run: echo 'Set labels'
     ng:
-      run: echo 'comment failed'
-    name: Comment when issue labels contains 'good first issue'
+      run: echo 'failed'
+    name: Set 'question' label
 `
 		tmpl := template.Must(template.New("init").Parse(ts))
 		tmplData := map[string]interface{}{}

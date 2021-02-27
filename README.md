@@ -15,14 +15,14 @@ $ cat myworkflow.yml
 tasks:
   -
     id: sample-task
-    if: '"good first issue" in labels'
+    if: 'is_issue && len(labels) == 0 && title endsWith "?"'
     do:
       comment: 'Good :+1:'
     ok:
       run: echo 'commented'
     ng:
       run: echo 'fail comment'
-    desc: This task comment when labels contains 'good first issue'
+    name: Set 'question' label
 ```
 
 And edit myworkflow.yml.
@@ -74,16 +74,20 @@ A workflow run is made up of one or more tasks. Tasks run in sequentially.
 tasks:
   -
     id: first
-    if: '"good first issue" in labels'
+    if: 'is_issue && len(labels) == 0 && title endsWith "?"'
     do:
-      comment: 'Good :+1:'
-    desc: Comment when labels contains 'good first issue'
+      labels: [question]
+    ok:
+      run: echo 'Set labels'
+    ng:
+      run: echo 'failed'
+    name: Set 'question' label
   -
     id: second
-    if: '"good first issue" in labels'
+    if: len(assignees) == 0
     do:
       assignees: [k1LoW]
-    desc: Assign me to issue or pull request
+    name: Assign me
 ```
 
 #### `tasks[*].id:`
