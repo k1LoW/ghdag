@@ -30,10 +30,10 @@ And edit myworkflow.yml.
 ### Run workflow on your machine
 
 ``` console
-$ env GITHUB_TOKEN=xxXxXXxxXXxx \
-GITHUB_REPOGITORY=owner/repo \
-SLACK_API_TOKEN=xoxb-xXXxxXXXxxXXXxXXXxxxxxxx \
-ghdag run myworkflow.yml
+$ export GITHUB_TOKEN=xxXxXXxxXXxx
+$ export GITHUB_REPOGITORY=k1LoW/myrepo
+$ export SLACK_API_TOKEN=xoxb-xXXxxXXXxxXXXxXXXxxxxxxx
+$ ghdag run myworkflow.yml
 ```
 
 ### Run workflow on GitHub Actions
