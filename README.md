@@ -1,6 +1,6 @@
 # ghdag
 
-:octocat: ghdag is a tiny workflow engine for GitHub issue and pull request.
+:octocat: `ghdag` is a tiny workflow engine for GitHub issue and pull request.
 
 ## Getting Started
 
@@ -33,35 +33,82 @@ And edit myworkflow.yml.
 $ export GITHUB_TOKEN=xxXxXXxxXXxx
 $ export GITHUB_REPOGITORY=k1LoW/myrepo
 $ ghdag run myworkflow.yml
+2021-02-28T00:26:41+09:00 [INFO] ghdag version 0.0.1
+2021-02-28T00:26:41+09:00 [INFO] Start session
+2021-02-28T00:26:41+09:00 [INFO] Fetch open issues and pull requests from k1LoW/myrepo
+2021-02-28T00:26:42+09:00 [INFO] 3 issues and pull requests are fetched
+2021-02-28T00:26:42+09:00 [INFO] 1 tasks are loaded
+2021-02-28T00:26:42+09:00 [INFO] [#14 << sample-task] [DO] Add comment: Good :+1:
+commented
+2021-02-28T00:26:43+09:00 [INFO] Session finished
+$
 ```
 
 ### Run workflow on GitHub Actions
 
 :construction:
 
-## Workflow configuration
+## Workflow syntax
 
-### Syntax
+`ghdag` requires a YAML file to define your workflow configuration.
 
-#### Environment variables in global scope (`env:`)
+#### `env:`
 
-#### Tasks (`tasks:`)
+A map of environment environment variables in global scope (available to all tasks in the workflow).
 
-#### Id (`tasks[*].id:`)
+**Example**
 
-#### Name (`tasks[*].name:`)
+``` yaml
+env:
+  SERVER: production
+  GITHUB_TOKEN: ${GHDAG_GITHUB_TOKEN}
+```
 
-Task name.
+#### `tasks:`
 
-#### Run condition (`tasks[*].if:`)
+A workflow run is made up of one or more tasks. Tasks run in sequentially.
+
+**Example**
+
+``` yaml
+tasks:
+  -
+    id: first
+    if: '"good first issue" in labels'
+    do:
+      comment: 'Good :+1:'
+    desc: Comment when labels contains 'good first issue'
+  -
+    id: second
+    if: '"good first issue" in labels'
+    do:
+      assignees: [k1LoW]
+    desc: Assign me to issue or pull request
+```
+
+#### `tasks[*].id:`
+
+Each task have an id to be called by another task.
+
+#### `tasks[*].name:`
+
+Name of task.
+
+#### `tasks[*].if:`
+
+The task will not be performed unless the conditions in the `if` section are met.
+
+If the `if` section is missing, the task will not be performed unless it is called by another task.
 
 ##### Expression syntax
 
-ghdag use [antonmedv/expr](https://github.com/antonmedv/expr).
+`ghdag` use [antonmedv/expr](https://github.com/antonmedv/expr).
 
 See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md).
 
-##### Variables
+##### Available variables
+
+The variables available in the `if` section are as follows
 
 | Variable name | Type | Description |
 | --- | --- | --- |
@@ -84,27 +131,51 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `latest_comment_author` | `string` | Author of latest comment |
 | `latest_comment_body` | `string` | Body of latest comment |
 
-#### Environment variables in the scope of each task (`tasks[*].env:`)
+#### `tasks[*].env:`
 
-#### Actions (`tasks[*].do:`, `tasks[*].ok:`, `tasks[*].ng:`)
+A map of environment environment variables in the scope of each task.
 
-#### Action: Execute command (`tasks[*].<action_type>.run:`)
+#### `tasks[*].do:`, `tasks[*].ok:`, `tasks[*].ng:`
 
-#### Action: Update labels (`tasks[*].<action_type>.labels:`)
+A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to be performed.
 
-#### Action: Update assignees (`tasks[*].<action_type>.assignees:`)
+1. Perform `do:` action.
+2. If the `do:` action succeeds, perform the `ok:` action.
+2. If the `do:` action fails, perform the `ng:` action.
 
-#### Action: Update reviewers (`tasks[*].<action_type>.reviewers:`)
+#### `tasks[*].<action_type>.run:`
 
-#### Action: Add comment (`tasks[*].<action_type>.comment:`)
+Action: Execute command.
 
-#### Action: Change state (`tasks[*].<action_type>.state:`)
+#### `tasks[*].<action_type>.labels:`
 
-#### Action: Notify message using Slack (`tasks[*].<action_type>.notify:`)
+Action: Update labels.
 
-#### Action: Call next tasks (`tasks[*].<action_type>.next:`)
+#### `tasks[*].<action_type>.assignees:`
 
-### Environment variables
+Action: Update assignees.
+
+#### `tasks[*].<action_type>.reviewers:`
+
+Action: Update reviewers.
+
+#### `tasks[*].<action_type>.comment:`
+
+Action: Add comment.
+
+#### `tasks[*].<action_type>.state:`
+
+Action: Change state.
+
+#### `tasks[*].<action_type>.notify:`
+
+Action: Notify message using Slack.
+
+#### `tasks[*].<action_type>.next:`
+
+Action: Call next tasks.
+
+## Environment variables for configuration
 
 | Environment variable | Nameription | Default on GitHub Actions |
 | --- | --- | --- |
