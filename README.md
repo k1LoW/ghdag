@@ -116,6 +116,7 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `SLACK_WEBHOOK_URL` | A Slack incoming webhook URL | - |
 | `SLACK_CHANNEL` | A notify Slack channel | - |
 | `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` section. | - |
+| `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` section. | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 

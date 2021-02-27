@@ -507,6 +507,18 @@ func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) er
 }
 
 func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) error {
+	if os.Getenv("GITHUB_REVIEWERS_SAMPLE") != "" {
+		sn, err := strconv.Atoi(os.Getenv("GITHUB_REVIEWERS_SAMPLE"))
+		if err != nil {
+			return err
+		}
+		if len(reviewers) < sn {
+			rand.Seed(time.Now().UnixNano())
+			rand.Shuffle(len(reviewers), func(i, j int) { reviewers[i], reviewers[j] = reviewers[j], reviewers[i] })
+			reviewers = reviewers[:sn]
+		}
+	}
+
 	ru := map[string]struct{}{}
 	rt := map[string]struct{}{}
 	for _, r := range reviewers {
