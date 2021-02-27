@@ -18,7 +18,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const limit = 99
+const limit = 100
 
 type Client struct {
 	v3    *github.Client
@@ -104,6 +104,9 @@ type issueNode struct {
 			Body      githubv4.String
 			CreatedAt githubv4.DateTime
 		}
+		PageInfo struct {
+			HasNextPage bool
+		}
 	} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
 }
 
@@ -138,6 +141,9 @@ type pullRequestNode struct {
 			Body      githubv4.String
 			CreatedAt githubv4.DateTime
 		}
+		PageInfo struct {
+			HasNextPage bool
+		}
 	} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
 }
 
@@ -147,28 +153,34 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	var q struct {
 		Repogitory struct {
 			Issues struct {
-				Nodes []issueNode
+				Nodes    []issueNode
+				PageInfo struct {
+					HasNextPage bool
+				}
 			} `graphql:"issues(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 			PullRequests struct {
-				Nodes []pullRequestNode
+				Nodes    []pullRequestNode
+				PageInfo struct {
+					HasNextPage bool
+				}
 			} `graphql:"pullRequests(first: $limit, states: OPEN, orderBy: {direction: DESC, field: CREATED_AT})"`
 		} `graphql:"repository(owner: $owner, name: $repo)"`
 	}
 	variables := map[string]interface{}{
 		"owner": githubv4.String(c.owner),
 		"repo":  githubv4.String(c.repo),
-		"limit": githubv4.Int(limit + 1),
+		"limit": githubv4.Int(limit),
 	}
 
 	if err := c.v4.Query(ctx, &q, variables); err != nil {
 		return nil, err
 	}
 
-	if len(q.Repogitory.Issues.Nodes) > limit {
+	if q.Repogitory.Issues.PageInfo.HasNextPage {
 		return nil, fmt.Errorf("too many opened issues (limit: %d)", limit)
 	}
 
-	if len(q.Repogitory.PullRequests.Nodes) > limit {
+	if q.Repogitory.PullRequests.PageInfo.HasNextPage {
 		return nil, fmt.Errorf("too many opened pull requests (limit: %d)", limit)
 	}
 
@@ -177,7 +189,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	for _, i := range q.Repogitory.Issues.Nodes {
 		n := int(i.Number)
 
-		if len(i.Comments.Nodes) > limit {
+		if i.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
 		cc := time.Time{}
@@ -231,7 +243,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			continue
 		}
 
-		if len(p.Comments.Nodes) > limit {
+		if p.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
 		}
 		pc := time.Time{}
@@ -306,7 +318,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		"owner":  githubv4.String(c.owner),
 		"repo":   githubv4.String(c.repo),
 		"number": githubv4.Int(n),
-		"limit":  githubv4.Int(limit + 1),
+		"limit":  githubv4.Int(limit),
 	}
 
 	if err := c.v4.Query(ctx, &q, variables); err != nil {
@@ -320,7 +332,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		i := q.Repogitory.IssueOrPullRequest.Issue
 		n := int(i.Number)
 
-		if len(i.Comments.Nodes) > limit {
+		if i.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
 		cc := time.Time{}
@@ -368,7 +380,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		p := q.Repogitory.IssueOrPullRequest.PullRequest
 		n := int(p.Number)
 
-		if len(p.Comments.Nodes) > limit {
+		if p.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
 		}
 		pc := time.Time{}
