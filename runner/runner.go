@@ -28,18 +28,10 @@ type Runner struct {
 }
 
 func New(c *config.Config) (*Runner, error) {
-	gc, err := gh.NewClient()
-	if err != nil {
-		return nil, err
-	}
-	sc, err := slk.NewClient()
-	if err != nil {
-		return nil, err
-	}
 	return &Runner{
 		config:    c,
-		github:    gc,
-		slack:     sc,
+		github:    nil,
+		slack:     nil,
 		envCache:  os.Environ(),
 		logPrefix: "",
 	}, nil
@@ -54,6 +46,23 @@ type TaskQueue struct {
 func (r *Runner) Run(ctx context.Context) error {
 	r.logPrefix = ""
 	r.log("Start session")
+	defer func() {
+		_ = r.revertEnv()
+	}()
+	if err := r.config.Env.Setenv(); err != nil {
+		return err
+	}
+	gc, err := gh.NewClient()
+	if err != nil {
+		return err
+	}
+	r.github = gc
+	sc, err := slk.NewClient()
+	if err != nil {
+		return err
+	}
+	r.slack = sc
+
 	r.log(fmt.Sprintf("Fetch open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
 	targets, err := r.github.FetchTargets(ctx)
 	if err != nil {
@@ -116,16 +125,16 @@ L:
 		}
 
 		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
-		if err := r.Perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
+		if err := r.perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
-			if err := r.Perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
+			if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
 				r.errlog(fmt.Sprintf("%s", err))
 				continue L
 			}
 		} else {
 			r.errlog(fmt.Sprintf("%s", err))
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
-			if err := r.Perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
+			if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
 				r.errlog(fmt.Sprintf("%s", err))
 				continue L
 			}
@@ -137,7 +146,7 @@ L:
 	return nil
 }
 
-func (r *Runner) Perform(ctx context.Context, a *task.Action, i *target.Target, t *task.Task, q chan TaskQueue) error {
+func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, t *task.Task, q chan TaskQueue) error {
 	if a == nil {
 		return nil
 	}
