@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/slack-go/slack"
 )
@@ -66,6 +69,11 @@ func (c *Client) postMessage(ctx context.Context, m string) error {
 			}
 			links = append(links, l)
 		}
+		links, err = sampleByEnv(links, "SLACK_MENTIONS_SAMPLE")
+		if err != nil {
+			return err
+		}
+
 		m = fmt.Sprintf("%s %s", strings.Join(links, " "), m)
 	}
 	if _, _, err := c.client.PostMessageContext(ctx, channelID, slack.MsgOptionBlocks(buildBlocks(m)...)); err != nil {
@@ -182,4 +190,20 @@ func buildBlocks(m string) []slack.Block {
 		slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", m, false, false), nil, nil),
 		contextBlock,
 	}
+}
+
+func sampleByEnv(in []string, envKey string) ([]string, error) {
+	if os.Getenv(envKey) == "" {
+		return in, nil
+	}
+	sn, err := strconv.Atoi(os.Getenv(envKey))
+	if err != nil {
+		return nil, err
+	}
+	if len(in) < sn {
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
+		in = in[:sn]
+	}
+	return in, nil
 }

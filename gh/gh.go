@@ -488,16 +488,9 @@ func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) er
 		return err
 	}
 
-	if os.Getenv("GITHUB_ASSIGNEES_SAMPLE") != "" {
-		sn, err := strconv.Atoi(os.Getenv("GITHUB_ASSIGNEES_SAMPLE"))
-		if err != nil {
-			return err
-		}
-		if len(as) < sn {
-			rand.Seed(time.Now().UnixNano())
-			rand.Shuffle(len(as), func(i, j int) { as[i], as[j] = as[j], as[i] })
-			as = as[:sn]
-		}
+	as, err = sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
+	if err != nil {
+		return err
 	}
 
 	if _, _, err := c.v3.Issues.Edit(ctx, c.owner, c.repo, n, &github.IssueRequest{
@@ -509,16 +502,10 @@ func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) er
 }
 
 func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) error {
-	if os.Getenv("GITHUB_REVIEWERS_SAMPLE") != "" {
-		sn, err := strconv.Atoi(os.Getenv("GITHUB_REVIEWERS_SAMPLE"))
-		if err != nil {
-			return err
-		}
-		if len(reviewers) < sn {
-			rand.Seed(time.Now().UnixNano())
-			rand.Shuffle(len(reviewers), func(i, j int) { reviewers[i], reviewers[j] = reviewers[j], reviewers[i] })
-			reviewers = reviewers[:sn]
-		}
+	var err error
+	reviewers, err = sampleByEnv(reviewers, "GITHUB_REVIEWERS_SAMPLE")
+	if err != nil {
+		return err
 	}
 
 	ru := map[string]struct{}{}
@@ -665,4 +652,20 @@ func unique(in []string) []string {
 		u = append(u, s)
 	}
 	return u
+}
+
+func sampleByEnv(in []string, envKey string) ([]string, error) {
+	if os.Getenv(envKey) == "" {
+		return in, nil
+	}
+	sn, err := strconv.Atoi(os.Getenv(envKey))
+	if err != nil {
+		return nil, err
+	}
+	if len(in) < sn {
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
+		in = in[:sn]
+	}
+	return in, nil
 }

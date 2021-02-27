@@ -118,6 +118,7 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` section. | - |
 | `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` section. | - |
 | `SLACK_MENTIONS` | Mentions to be given to notifications | - |
+| `SLACK_MENTIONS_SAMPLE` | Number of users to randomly select from those listed in `SLACK_MENTIONS`. | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
