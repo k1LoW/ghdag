@@ -11,15 +11,17 @@ import (
 )
 
 type Client struct {
-	client       *slack.Client
-	channelCache map[string]*slack.Channel
-	userCache    map[string]*slack.User
+	client         *slack.Client
+	channelCache   map[string]slack.Channel
+	userCache      map[string]slack.User
+	userGroupCache map[string]slack.UserGroup
 }
 
 func NewClient() (*Client, error) {
 	c := &Client{
-		channelCache: map[string]*slack.Channel{},
-		userCache:    map[string]*slack.User{},
+		channelCache:   map[string]slack.Channel{},
+		userCache:      map[string]slack.User{},
+		userGroupCache: map[string]slack.UserGroup{},
 	}
 	if os.Getenv("SLACK_API_TOKEN") != "" {
 		c.client = slack.New(os.Getenv("SLACK_API_TOKEN"))
@@ -38,9 +40,7 @@ func (c *Client) PostMessage(ctx context.Context, m string) error {
 		c.client = nil
 		return err
 	case os.Getenv("SLACK_WEBHOOK_URL") != "":
-		url := os.Getenv("SLACK_WEBHOOK_URL")
-		msg := buildWebhookMessage(m)
-		return slack.PostWebhookContext(ctx, url, msg)
+		return c.postWebbookMessage(ctx, m)
 	default:
 		return errors.New("not found environment for Slack: SLACK_API_TOKEN or SLACK_WEBHOOK_URL")
 	}
@@ -56,10 +56,31 @@ func (c *Client) postMessage(ctx context.Context, m string) error {
 	if err != nil {
 		return err
 	}
+	if os.Getenv("SLACK_MENTIONS") != "" {
+		mentions := strings.Split(os.Getenv("SLACK_MENTIONS"), " ")
+		links := []string{}
+		for _, mention := range mentions {
+			l, err := c.getMentionLinkByName(ctx, mention)
+			if err != nil {
+				return err
+			}
+			links = append(links, l)
+		}
+		m = fmt.Sprintf("%s %s", strings.Join(links, " "), m)
+	}
 	if _, _, err := c.client.PostMessageContext(ctx, channelID, slack.MsgOptionBlocks(buildBlocks(m)...)); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c *Client) postWebbookMessage(ctx context.Context, m string) error {
+	if os.Getenv("SLACK_MENTIONS") != "" {
+		return errors.New("notification using webhook does not support mentions: SLACK_MENTIONS")
+	}
+	url := os.Getenv("SLACK_WEBHOOK_URL")
+	msg := buildWebhookMessage(m)
+	return slack.PostWebhookContext(ctx, url, msg)
 }
 
 func (c *Client) getChannelIDByName(ctx context.Context, channel string) (string, error) {
@@ -84,7 +105,7 @@ L:
 			return "", err
 		}
 		for _, cc := range ch {
-			c.channelCache[channel] = &cc
+			c.channelCache[channel] = cc
 			if cc.Name == channel {
 				cID = cc.ID
 				break L
@@ -99,6 +120,49 @@ L:
 	}
 
 	return cID, nil
+}
+
+func (c *Client) getMentionLinkByName(ctx context.Context, name string) (string, error) {
+	name = strings.TrimPrefix(name, "@")
+	switch name {
+	case "channel", "here", "everyone":
+		return fmt.Sprintf("<!%s>", name), nil
+	}
+	if uc, ok := c.userCache[name]; ok {
+		// https://api.slack.com/reference/surfaces/formatting#mentioning-users
+		return fmt.Sprintf("<@%s>", uc.ID), nil
+	}
+	if gc, ok := c.userGroupCache[name]; ok {
+		// https://api.slack.com/reference/surfaces/formatting#mentioning-groups
+		return fmt.Sprintf("<!!subteam^%s>", gc.ID), nil
+	}
+
+	users, err := c.client.GetUsersContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	for _, u := range users {
+		c.userCache[u.Name] = u
+	}
+	uc, ok := c.userCache[name]
+	if ok {
+		return fmt.Sprintf("<@%s>", uc.ID), nil
+	}
+
+	groups, err := c.client.GetUserGroupsContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, g := range groups {
+		c.userGroupCache[g.Handle] = g
+	}
+	gc, ok := c.userGroupCache[name]
+	if ok {
+		return fmt.Sprintf("<!!subteam^%s>", gc.ID), nil
+	}
+
+	return "", fmt.Errorf("not found user or usergroup: %s", name)
 }
 
 func buildWebhookMessage(m string) *slack.WebhookMessage {
