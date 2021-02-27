@@ -114,9 +114,10 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `GITHUB_GRAPHQL_URL` | The GitHub GraphQL API URL | `https://api.github.com/graphql` |
 | `SLACK_API_TOKEN` | A Slack OAuth access token | - |
 | `SLACK_WEBHOOK_URL` | A Slack incoming webhook URL | - |
-| `SLACK_CHANNEL` | A notify Slack channel | - |
+| `SLACK_CHANNEL` | A Slack channel to be notified | - |
 | `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` section. | - |
 | `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` section. | - |
+| `SLACK_MENTIONS` | Mentions to be given to notifications | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
@@ -124,6 +125,7 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 - `chat.write`
 - `chat.write.public`
 - `users.read`
+- `usergroups.read`
 
 ## Install
 
