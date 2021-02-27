@@ -120,10 +120,20 @@ type pullRequestNode struct {
 	URL            githubv4.String
 	IsDraft        githubv4.Boolean
 	ReviewDecision githubv4.PullRequestReviewDecision
-	CreatedAt      githubv4.DateTime
-	UpdatedAt      githubv4.DateTime
-	LastEditedAt   githubv4.DateTime
-	Labels         struct {
+	ReviewRequests struct {
+		Nodes []struct {
+			AsCodeOwner     githubv4.Boolean
+			RequestReviewer struct {
+				User struct {
+					Login githubv4.String
+				} `graphql:"... on User"`
+			}
+		}
+	} `graphql:"reviewRequests(first: 100)"`
+	CreatedAt    githubv4.DateTime
+	UpdatedAt    githubv4.DateTime
+	LastEditedAt githubv4.DateTime
+	Labels       struct {
 		Nodes []struct {
 			Name githubv4.String
 		}
@@ -279,6 +289,10 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		for _, a := range p.Assignees.Nodes {
 			assignees = append(assignees, string(a.Login))
 		}
+		reviewers := []string{}
+		for _, r := range p.ReviewRequests.Nodes {
+			reviewers = append(reviewers, string(r.RequestReviewer.User.Login))
+		}
 
 		t := &target.Target{
 			Number:                   n,
@@ -288,6 +302,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			Author:                   string(p.Author.Login),
 			Labels:                   labels,
 			Assignees:                assignees,
+			Reviewers:                reviewers,
 			IsIssue:                  false,
 			IsPullRequest:            true,
 			IsApproved:               isApproved,
@@ -416,6 +431,10 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		for _, a := range p.Assignees.Nodes {
 			assignees = append(assignees, string(a.Login))
 		}
+		reviewers := []string{}
+		for _, r := range p.ReviewRequests.Nodes {
+			reviewers = append(reviewers, string(r.RequestReviewer.User.Login))
+		}
 
 		t := &target.Target{
 			Number:                   n,
@@ -425,6 +444,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 			Author:                   string(p.Author.Login),
 			Labels:                   labels,
 			Assignees:                assignees,
+			Reviewers:                reviewers,
 			IsIssue:                  false,
 			IsPullRequest:            true,
 			IsApproved:               isApproved,

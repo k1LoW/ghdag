@@ -72,6 +72,8 @@ See [Language Definition](https://github.com/antonmedv/expr/blob/master/docs/Lan
 | `url` | `string` | URL of the issue (pull request) |
 | `author` | `string` | Author of the issue (pull request) |
 | `labels` | `array` | Labels that are set for the issue |
+| `assignees` | `array` | Assignees of the issue (pull request) |
+| `reviewers` | `array` | Reviewers of the pull request |
 | `is_issue` | `bool` | `true` if the target type of the workflow is "Issue" |
 | `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request" |
 | `is_approved` | `bool` | `true` if the pull request has received an approving review  |
