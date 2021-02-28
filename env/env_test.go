@@ -54,7 +54,7 @@ func TestSetenv(t *testing.T) {
 
 		tt.in.Setenv()
 
-		after := envMap()
+		after := EnvMap()
 
 		if len(after) != len(tt.want) {
 			t.Errorf("got %v\nwant %v", len(after), len(tt.want))

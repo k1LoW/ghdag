@@ -155,7 +155,9 @@ func (r *Runner) Run(ctx context.Context) error {
 				}
 			} else {
 				r.errlog(fmt.Sprintf("%s", err))
-				os.Setenv("GHDAG_ACTION_OK_ERROR", fmt.Sprintf("%s", err))
+				if err := os.Setenv("GHDAG_ACTION_OK_ERROR", fmt.Sprintf("%s", err)); err != nil {
+					return err
+				}
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
 					r.errlog(fmt.Sprintf("%s", err))
@@ -199,8 +201,12 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(a.Reviewers, ", ")))
 		return r.github.SetReviewers(ctx, i.Number, a.Reviewers)
 	case a.Comment != "":
-		r.log(fmt.Sprintf("Add comment: %s", a.Comment))
-		return r.github.AddComment(ctx, i.Number, a.Comment)
+		c, err := env.ParseWithEnviron(a.Comment, env.EnvMap())
+		if err != nil {
+			return err
+		}
+		r.log(fmt.Sprintf("Add comment: %s", c))
+		return r.github.AddComment(ctx, i.Number, c)
 	case a.State != "":
 		r.log(fmt.Sprintf("Change state: %s", a.State))
 		switch a.State {
@@ -212,8 +218,12 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 			return fmt.Errorf("invalid state: %s", a.State)
 		}
 	case a.Notify != "":
-		r.log(fmt.Sprintf("Send notification: %s", a.Notify))
-		return r.slack.PostMessage(ctx, a.Notify)
+		n, err := env.ParseWithEnviron(a.Notify, env.EnvMap())
+		if err != nil {
+			return err
+		}
+		r.log(fmt.Sprintf("Send notification: %s", n))
+		return r.slack.PostMessage(ctx, n)
 	case len(a.Next) > 0:
 		r.log(fmt.Sprintf("Call next task: %s", strings.Join(a.Next, ", ")))
 		for _, id := range a.Next {

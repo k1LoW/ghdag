@@ -17,9 +17,9 @@ var (
 type Env map[string]string
 
 func (e Env) Setenv() error {
-	em := envMap()
+	em := EnvMap()
 	for k, v := range e {
-		parsed, err := parseWithEnviron(v, em)
+		parsed, err := ParseWithEnviron(v, em)
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func Revert(envCache []string) error {
 	return nil
 }
 
-func parseWithEnviron(v string, envMap map[string]string) (string, error) {
+func ParseWithEnviron(v string, envMap map[string]string) (string, error) {
 	if !re.MatchString(v) {
 		return v, nil
 	}
@@ -64,7 +64,7 @@ func parseWithEnviron(v string, envMap map[string]string) (string, error) {
 	return re3.ReplaceAllString(buf.String(), "{{$1"), nil
 }
 
-func envMap() map[string]string {
+func EnvMap() map[string]string {
 	m := map[string]string{}
 	for _, kv := range os.Environ() {
 		if !strings.Contains(kv, "=") {
