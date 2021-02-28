@@ -84,7 +84,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 	}
 
-L:
 	for {
 		if len(q) == 0 {
 			close(q)
@@ -95,49 +94,78 @@ L:
 			break
 		}
 
-		n := tq.target.Number
-		id := tq.task.Id
-		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
+		err := func() error {
+			r.mu.Lock()
+			defer func() {
+				_ = r.revertEnv()
+				r.mu.Unlock()
+			}()
 
-		if tq.task.If != "" {
-			do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), tq.target.Dump())
-			if err != nil {
-				r.errlog(fmt.Sprintf("%s", err))
-				continue L
-			}
-			if !do.(bool) {
-				r.debuglog(fmt.Sprintf("Skip: %s", tq.task.If))
-				continue L
-			}
-		}
-		if tq.task.If == "" && !tq.called {
-			r.debuglog(fmt.Sprintf("Skip: %s", "(non `if:` section)"))
-			continue L
-		}
+			n := tq.target.Number
+			id := tq.task.Id
+			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
 
-		if tq.called {
-			// Update target
-			target, err := r.github.FetchTarget(ctx, tq.target.Number)
-			if err != nil {
+			if err := os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", n)); err != nil {
 				return err
 			}
-			tq.target = target
-		}
+			if err := os.Setenv("GHDAG_TARGET_URL", tq.target.URL); err != nil {
+				return err
+			}
+			if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
+				return err
+			}
+			if err := r.config.Env.Setenv(); err != nil {
+				return err
+			}
+			if err := tq.task.Env.Setenv(); err != nil {
+				return err
+			}
 
-		r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
-		if err := r.perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
-			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
-			if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
-				r.errlog(fmt.Sprintf("%s", err))
-				continue L
+			if tq.task.If != "" {
+				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), tq.target.Dump())
+				if err != nil {
+					r.errlog(fmt.Sprintf("%s", err))
+					return nil
+				}
+				if !do.(bool) {
+					r.debuglog(fmt.Sprintf("Skip: %s", tq.task.If))
+					return nil
+				}
 			}
-		} else {
-			r.errlog(fmt.Sprintf("%s", err))
-			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
-			if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
-				r.errlog(fmt.Sprintf("%s", err))
-				continue L
+			if tq.task.If == "" && !tq.called {
+				r.debuglog(fmt.Sprintf("Skip: %s", "(non `if:` section)"))
+				return nil
 			}
+
+			if tq.called {
+				// Update target
+				target, err := r.github.FetchTarget(ctx, tq.target.Number)
+				if err != nil {
+					return err
+				}
+				tq.target = target
+			}
+
+			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
+			if err := r.perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
+				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
+				if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
+					r.errlog(fmt.Sprintf("%s", err))
+					return nil
+				}
+			} else {
+				r.errlog(fmt.Sprintf("%s", err))
+				os.Setenv("GHDAG_ACTION_OK_ERROR", fmt.Sprintf("%s", err))
+				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
+				if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
+					r.errlog(fmt.Sprintf("%s", err))
+					return nil
+				}
+			}
+			return nil
+		}()
+		if err != nil {
+			return err
 		}
 	}
 
@@ -149,28 +177,6 @@ L:
 func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, t *task.Task, q chan TaskQueue) error {
 	if a == nil {
 		return nil
-	}
-
-	r.mu.Lock()
-	defer func() {
-		_ = r.revertEnv()
-		r.mu.Unlock()
-	}()
-
-	if err := os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", i.Number)); err != nil {
-		return err
-	}
-	if err := os.Setenv("GHDAG_TARGET_URL", i.URL); err != nil {
-		return err
-	}
-	if err := os.Setenv("GHDAG_TASK_ID", t.Id); err != nil {
-		return err
-	}
-	if err := r.config.Env.Setenv(); err != nil {
-		return err
-	}
-	if err := t.Env.Setenv(); err != nil {
-		return err
 	}
 
 	switch {
