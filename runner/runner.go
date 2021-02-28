@@ -155,7 +155,9 @@ func (r *Runner) Run(ctx context.Context) error {
 				}
 			} else {
 				r.errlog(fmt.Sprintf("%s", err))
-				os.Setenv("GHDAG_ACTION_OK_ERROR", fmt.Sprintf("%s", err))
+				if err := os.Setenv("GHDAG_ACTION_OK_ERROR", fmt.Sprintf("%s", err)); err != nil {
+					return err
+				}
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
 					r.errlog(fmt.Sprintf("%s", err))
