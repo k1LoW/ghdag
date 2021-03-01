@@ -31,6 +31,17 @@ type Target struct {
 	NumberOfConsecutiveComments int      `json:"-"`
 }
 
+func (t *Target) NoCodeOwnerReviewers() []string {
+	nr := []string{}
+	for _, r := range t.Reviewers {
+		if contains(t.CodeOwners, r) {
+			continue
+		}
+		nr = append(nr, r)
+	}
+	return nr
+}
+
 func (t *Target) Dump() map[string]interface{} {
 	b, _ := json.Marshal(t)
 	v := map[string]interface{}{}
@@ -48,4 +59,13 @@ func (targets Targets) MaxDigits() int {
 		}
 	}
 	return digits
+}
+
+func contains(s []string, e string) bool {
+	for _, v := range s {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }

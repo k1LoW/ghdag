@@ -523,7 +523,7 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 			k = fmt.Sprintf("%s/%s", string(r.RequestedReviewer.Team.Organization.Login), string(r.RequestedReviewer.Team.Slug))
 		}
 		reviewers = append(reviewers, k)
-		if r.AsCodeOwner.(bool) {
+		if bool(r.AsCodeOwner) {
 			codeOwners = append(codeOwners, k)
 		}
 	}
