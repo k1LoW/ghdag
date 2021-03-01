@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -208,20 +209,11 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		if i.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
-		cc := time.Time{}
-		latestComment := struct {
-			Author struct {
-				Login githubv4.String
-			}
-			Body      githubv4.String
-			CreatedAt githubv4.DateTime
-		}{}
-		for _, c := range i.Comments.Nodes {
-			if cc.Unix() < c.CreatedAt.Unix() {
-				latestComment = c
-				cc = c.CreatedAt.Time
-			}
-		}
+		sort.Slice(i.Comments.Nodes, func(a, b int) bool {
+			// CreatedAt DESC
+			return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
+		})
+		latestComment := i.Comments.Nodes[0]
 
 		labels := []string{}
 		for _, l := range i.Labels.Nodes {
@@ -367,20 +359,12 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		if i.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
-		cc := time.Time{}
-		latestComment := struct {
-			Author struct {
-				Login githubv4.String
-			}
-			Body      githubv4.String
-			CreatedAt githubv4.DateTime
-		}{}
-		for _, c := range i.Comments.Nodes {
-			if cc.Unix() < c.CreatedAt.Unix() {
-				latestComment = c
-				cc = c.CreatedAt.Time
-			}
-		}
+
+		sort.Slice(i.Comments.Nodes, func(a, b int) bool {
+			// CreatedAt DESC
+			return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
+		})
+		latestComment := i.Comments.Nodes[0]
 
 		labels := []string{}
 		for _, l := range i.Labels.Nodes {

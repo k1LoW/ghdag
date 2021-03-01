@@ -237,7 +237,10 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 			return err
 		}
 		r.log(fmt.Sprintf("Add comment: %s", c))
-		if cmp.Equal(i.LatestCommentBody, c) {
+
+		c = fmt.Sprintf("%s\n<!-- ghdag:%s:%s -->\n", c, t.Id, a.Type)
+
+		if i.LatestCommentBody == c {
 			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))
 		}
 		return r.github.AddComment(ctx, i.Number, c)
