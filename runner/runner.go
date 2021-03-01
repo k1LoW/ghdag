@@ -236,13 +236,24 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		}
 		return r.github.SetAssignees(ctx, i.Number, a.Assignees)
 	case len(a.Reviewers) > 0:
-		sortStringSlice(i.Reviewers)
-		sortStringSlice(a.Reviewers)
 		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(a.Reviewers, ", ")))
-		if cmp.Equal(i.Reviewers, a.Reviewers) {
+
+		rb := i.NoCodeOwnerReviewers()
+		sortStringSlice(rb)
+
+		ra := []string{}
+		for _, r := range a.Reviewers {
+			if contains(i.CodeOwners, r) {
+				continue
+			}
+			ra = append(ra, r)
+		}
+		sortStringSlice(ra)
+
+		if len(ra) == 0 || cmp.Equal(rb, ra) {
 			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Reviewers, ", ")))
 		}
-		return r.github.SetReviewers(ctx, i.Number, a.Reviewers)
+		return r.github.SetReviewers(ctx, i.Number, ra)
 	case a.Comment != "":
 		c, err := env.ParseWithEnviron(a.Comment, env.EnvMap())
 		if err != nil {
@@ -308,6 +319,15 @@ func (r *Runner) debuglog(m string) {
 
 func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
+}
+
+func contains(s []string, e string) bool {
+	for _, v := range s {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }
 
 func sortStringSlice(in []string) {

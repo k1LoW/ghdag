@@ -16,6 +16,7 @@ type Target struct {
 	Labels                      []string `json:"labels"`
 	Assignees                   []string `json:"assignees"`
 	Reviewers                   []string `json:"reviewers"`
+	CodeOwners                  []string `json:"code_owners"`
 	IsIssue                     bool     `json:"is_issue"`
 	IsPullRequest               bool     `json:"is_pull_request"`
 	IsApproved                  bool     `json:"is_approved"`
@@ -28,6 +29,17 @@ type Target struct {
 	LatestCommentAuthor         string   `json:"latest_comment_author"`
 	LatestCommentBody           string   `json:"latest_comment_body"`
 	NumberOfConsecutiveComments int      `json:"-"`
+}
+
+func (t *Target) NoCodeOwnerReviewers() []string {
+	nr := []string{}
+	for _, r := range t.Reviewers {
+		if contains(t.CodeOwners, r) {
+			continue
+		}
+		nr = append(nr, r)
+	}
+	return nr
 }
 
 func (t *Target) Dump() map[string]interface{} {
@@ -47,4 +59,13 @@ func (targets Targets) MaxDigits() int {
 		}
 	}
 	return digits
+}
+
+func contains(s []string, e string) bool {
+	for _, v := range s {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }
