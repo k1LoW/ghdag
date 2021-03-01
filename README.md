@@ -149,6 +149,14 @@ A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to 
 2. If the `do:` action succeeds, perform the `ok:` action.
 2. If the `do:` action fails, perform the `ng:` action.
 
+##### Available builtin environment variables
+
+| Environment variable | Description |
+| --- | --- |
+| `GHDAG_TASK_ID` | Task ID |
+| `GHDAG_ACTION_OK_ERROR` | Error message when `ok:` action failed |
+| `GHDAG_TASK_*` | Variables available in the `if:` section. ( ex. `number` -> `GHDAG_TASK_NUMBER` ) |
+
 #### `tasks[*].<action_type>.run:`
 
 Action: Execute command.
@@ -183,7 +191,7 @@ Action: Call next tasks.
 
 ## Environment variables for configuration
 
-| Environment variable | Nameription | Default on GitHub Actions |
+| Environment variable | Description | Default on GitHub Actions |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | A GitHub access token. | - |
 | `GITHUB_REPOSITORY` | The owner and repository name | `owner/repo` of the repository where GitHub Actions are running |
