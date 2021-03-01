@@ -205,152 +205,23 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	now := time.Now()
 
 	for _, i := range q.Repogitory.Issues.Nodes {
-		n := int(i.Number)
-
-		if i.Comments.PageInfo.HasNextPage {
-			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
+		t, err := buildTargetFromIssue(i, now)
+		if err != nil {
+			return nil, err
 		}
-		latestComment := struct {
-			Author struct {
-				Login githubv4.String
-			}
-			Body      githubv4.String
-			CreatedAt githubv4.DateTime
-		}{}
-		sort.Slice(i.Comments.Nodes, func(a, b int) bool {
-			// CreatedAt DESC
-			return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
-		})
-		if len(i.Comments.Nodes) > 0 {
-			latestComment = i.Comments.Nodes[0]
-		}
-		numComments := 0
-		for _, c := range i.Comments.Nodes {
-			if !strings.Contains(string(c.Body), CommentLogPrefix) {
-				break
-			}
-			numComments++
-		}
-
-		labels := []string{}
-		for _, l := range i.Labels.Nodes {
-			labels = append(labels, string(l.Name))
-		}
-		assignees := []string{}
-		for _, a := range i.Assignees.Nodes {
-			assignees = append(assignees, string(a.Login))
-		}
-
-		t := &target.Target{
-			Number:                      n,
-			Title:                       string(i.Title),
-			Body:                        string(i.Body),
-			URL:                         string(i.URL),
-			Author:                      string(i.Author.Login),
-			Labels:                      labels,
-			Assignees:                   assignees,
-			IsIssue:                     true,
-			IsPullRequest:               false,
-			HoursElapsedSinceCreated:    int(now.Sub(i.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated:    int(now.Sub(i.UpdatedAt.Time).Hours()),
-			NumberOfComments:            len(i.Comments.Nodes),
-			LatestCommentAuthor:         string(latestComment.Author.Login),
-			LatestCommentBody:           string(latestComment.Body),
-			NumberOfConsecutiveComments: numComments,
-		}
-
-		targets[n] = t
+		targets[t.Number] = t
 	}
 
 	for _, p := range q.Repogitory.PullRequests.Nodes {
-		n := int(p.Number)
-
 		if bool(p.IsDraft) {
 			// Skip draft pull request
 			continue
 		}
-
-		if p.Comments.PageInfo.HasNextPage {
-			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
+		t, err := buildTargetFromPullRequest(p, now)
+		if err != nil {
+			return nil, err
 		}
-		latestComment := struct {
-			Author struct {
-				Login githubv4.String
-			}
-			Body      githubv4.String
-			CreatedAt githubv4.DateTime
-		}{}
-		sort.Slice(p.Comments.Nodes, func(a, b int) bool {
-			// CreatedAt DESC
-			return (p.Comments.Nodes[a].CreatedAt.Unix() > p.Comments.Nodes[b].CreatedAt.Unix())
-		})
-		if len(p.Comments.Nodes) > 0 {
-			latestComment = p.Comments.Nodes[0]
-		}
-		numComments := 0
-		for _, c := range p.Comments.Nodes {
-			if !strings.Contains(string(c.Body), CommentLogPrefix) {
-				break
-			}
-			numComments++
-		}
-
-		isApproved := false
-		isReviewRequired := false
-		isChangeRequested := false
-		switch p.ReviewDecision {
-		case githubv4.PullRequestReviewDecisionApproved:
-			isApproved = true
-		case githubv4.PullRequestReviewDecisionReviewRequired:
-			isReviewRequired = true
-		case githubv4.PullRequestReviewDecisionChangesRequested:
-			isChangeRequested = true
-		}
-		mergeable := false
-		if p.Mergeable == githubv4.MergeableStateMergeable {
-			mergeable = true
-		}
-
-		labels := []string{}
-		for _, l := range p.Labels.Nodes {
-			labels = append(labels, string(l.Name))
-		}
-		assignees := []string{}
-		for _, a := range p.Assignees.Nodes {
-			assignees = append(assignees, string(a.Login))
-		}
-		reviewers := []string{}
-		for _, r := range p.ReviewRequests.Nodes {
-			reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
-			for _, m := range r.RequestedReviewer.Team.Members.Nodes {
-				reviewers = append(reviewers, string(m.Login))
-			}
-		}
-
-		t := &target.Target{
-			Number:                      n,
-			Title:                       string(p.Title),
-			Body:                        string(p.Body),
-			URL:                         string(p.URL),
-			Author:                      string(p.Author.Login),
-			Labels:                      labels,
-			Assignees:                   assignees,
-			Reviewers:                   reviewers,
-			IsIssue:                     false,
-			IsPullRequest:               true,
-			IsApproved:                  isApproved,
-			IsReviewRequired:            isReviewRequired,
-			IsChangeRequested:           isChangeRequested,
-			Mergeable:                   mergeable,
-			HoursElapsedSinceCreated:    int(now.Sub(p.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated:    int(now.Sub(p.UpdatedAt.Time).Hours()),
-			NumberOfComments:            len(p.Comments.Nodes),
-			LatestCommentAuthor:         string(latestComment.Author.Login),
-			LatestCommentBody:           string(latestComment.Body),
-			NumberOfConsecutiveComments: numComments,
-		}
-
-		targets[n] = t
+		targets[t.Number] = t
 	}
 
 	return targets, nil
@@ -381,146 +252,11 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	if strings.Contains(string(q.Repogitory.IssueOrPullRequest.Issue.URL), "/issues/") {
 		// Issue
 		i := q.Repogitory.IssueOrPullRequest.Issue
-		n := int(i.Number)
-
-		if i.Comments.PageInfo.HasNextPage {
-			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
-		}
-
-		sort.Slice(i.Comments.Nodes, func(a, b int) bool {
-			// CreatedAt DESC
-			return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
-		})
-		latestComment := struct {
-			Author struct {
-				Login githubv4.String
-			}
-			Body      githubv4.String
-			CreatedAt githubv4.DateTime
-		}{}
-		if len(i.Comments.Nodes) > 0 {
-			latestComment = i.Comments.Nodes[0]
-		}
-		numComments := 0
-		for _, c := range i.Comments.Nodes {
-			if !strings.Contains(string(c.Body), CommentLogPrefix) {
-				break
-			}
-			numComments++
-		}
-
-		labels := []string{}
-		for _, l := range i.Labels.Nodes {
-			labels = append(labels, string(l.Name))
-		}
-		assignees := []string{}
-		for _, a := range i.Assignees.Nodes {
-			assignees = append(assignees, string(a.Login))
-		}
-
-		t := &target.Target{
-			Number:                      n,
-			Title:                       string(i.Title),
-			Body:                        string(i.Body),
-			URL:                         string(i.URL),
-			Author:                      string(i.Author.Login),
-			Labels:                      labels,
-			Assignees:                   assignees,
-			IsIssue:                     true,
-			IsPullRequest:               false,
-			HoursElapsedSinceCreated:    int(now.Sub(i.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated:    int(now.Sub(i.UpdatedAt.Time).Hours()),
-			NumberOfComments:            len(i.Comments.Nodes),
-			LatestCommentAuthor:         string(latestComment.Author.Login),
-			LatestCommentBody:           string(latestComment.Body),
-			NumberOfConsecutiveComments: numComments,
-		}
-		return t, nil
+		return buildTargetFromIssue(i, now)
 	} else {
 		// Pull request
 		p := q.Repogitory.IssueOrPullRequest.PullRequest
-		n := int(p.Number)
-
-		if p.Comments.PageInfo.HasNextPage {
-			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
-		}
-		latestComment := struct {
-			Author struct {
-				Login githubv4.String
-			}
-			Body      githubv4.String
-			CreatedAt githubv4.DateTime
-		}{}
-		sort.Slice(p.Comments.Nodes, func(a, b int) bool {
-			// CreatedAt DESC
-			return (p.Comments.Nodes[a].CreatedAt.Unix() > p.Comments.Nodes[b].CreatedAt.Unix())
-		})
-		if len(p.Comments.Nodes) > 0 {
-			latestComment = p.Comments.Nodes[0]
-		}
-		numComments := 0
-		for _, c := range p.Comments.Nodes {
-			if !strings.Contains(string(c.Body), CommentLogPrefix) {
-				break
-			}
-			numComments++
-		}
-
-		isApproved := false
-		isReviewRequired := false
-		isChangeRequested := false
-		switch p.ReviewDecision {
-		case githubv4.PullRequestReviewDecisionApproved:
-			isApproved = true
-		case githubv4.PullRequestReviewDecisionReviewRequired:
-			isReviewRequired = true
-		case githubv4.PullRequestReviewDecisionChangesRequested:
-			isChangeRequested = true
-		}
-		mergeable := false
-		if p.Mergeable == githubv4.MergeableStateMergeable {
-			mergeable = true
-		}
-		labels := []string{}
-		for _, l := range p.Labels.Nodes {
-			labels = append(labels, string(l.Name))
-		}
-		assignees := []string{}
-		for _, a := range p.Assignees.Nodes {
-			assignees = append(assignees, string(a.Login))
-		}
-		reviewers := []string{}
-		for _, r := range p.ReviewRequests.Nodes {
-			reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
-			for _, m := range r.RequestedReviewer.Team.Members.Nodes {
-				reviewers = append(reviewers, string(m.Login))
-			}
-		}
-
-		t := &target.Target{
-			Number:                      n,
-			Title:                       string(p.Title),
-			Body:                        string(p.Body),
-			URL:                         string(p.URL),
-			Author:                      string(p.Author.Login),
-			Labels:                      labels,
-			Assignees:                   assignees,
-			Reviewers:                   reviewers,
-			IsIssue:                     false,
-			IsPullRequest:               true,
-			IsApproved:                  isApproved,
-			IsReviewRequired:            isReviewRequired,
-			IsChangeRequested:           isChangeRequested,
-			Mergeable:                   mergeable,
-			HoursElapsedSinceCreated:    int(now.Sub(p.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated:    int(now.Sub(p.UpdatedAt.Time).Hours()),
-			NumberOfComments:            len(p.Comments.Nodes),
-			LatestCommentAuthor:         string(latestComment.Author.Login),
-			LatestCommentBody:           string(latestComment.Body),
-			NumberOfConsecutiveComments: numComments,
-		}
-
-		return t, nil
+		return buildTargetFromPullRequest(p, now)
 	}
 }
 
@@ -663,6 +399,146 @@ type roundTripper struct {
 func (rt roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Set("Authorization", fmt.Sprintf("token %s", rt.accessToken))
 	return rt.transport.RoundTrip(r)
+}
+
+func buildTargetFromIssue(i issueNode, now time.Time) (*target.Target, error) {
+	n := int(i.Number)
+
+	if i.Comments.PageInfo.HasNextPage {
+		return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
+	}
+	latestComment := struct {
+		Author struct {
+			Login githubv4.String
+		}
+		Body      githubv4.String
+		CreatedAt githubv4.DateTime
+	}{}
+	sort.Slice(i.Comments.Nodes, func(a, b int) bool {
+		// CreatedAt DESC
+		return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
+	})
+	if len(i.Comments.Nodes) > 0 {
+		latestComment = i.Comments.Nodes[0]
+	}
+	numComments := 0
+	for _, c := range i.Comments.Nodes {
+		if !strings.Contains(string(c.Body), CommentLogPrefix) {
+			break
+		}
+		numComments++
+	}
+
+	labels := []string{}
+	for _, l := range i.Labels.Nodes {
+		labels = append(labels, string(l.Name))
+	}
+	assignees := []string{}
+	for _, a := range i.Assignees.Nodes {
+		assignees = append(assignees, string(a.Login))
+	}
+
+	return &target.Target{
+		Number:                      n,
+		Title:                       string(i.Title),
+		Body:                        string(i.Body),
+		URL:                         string(i.URL),
+		Author:                      string(i.Author.Login),
+		Labels:                      labels,
+		Assignees:                   assignees,
+		IsIssue:                     true,
+		IsPullRequest:               false,
+		HoursElapsedSinceCreated:    int(now.Sub(i.CreatedAt.Time).Hours()),
+		HoursElapsedSinceUpdated:    int(now.Sub(i.UpdatedAt.Time).Hours()),
+		NumberOfComments:            len(i.Comments.Nodes),
+		LatestCommentAuthor:         string(latestComment.Author.Login),
+		LatestCommentBody:           string(latestComment.Body),
+		NumberOfConsecutiveComments: numComments,
+	}, nil
+}
+
+func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Target, error) {
+	n := int(p.Number)
+
+	if p.Comments.PageInfo.HasNextPage {
+		return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
+	}
+	latestComment := struct {
+		Author struct {
+			Login githubv4.String
+		}
+		Body      githubv4.String
+		CreatedAt githubv4.DateTime
+	}{}
+	sort.Slice(p.Comments.Nodes, func(a, b int) bool {
+		// CreatedAt DESC
+		return (p.Comments.Nodes[a].CreatedAt.Unix() > p.Comments.Nodes[b].CreatedAt.Unix())
+	})
+	if len(p.Comments.Nodes) > 0 {
+		latestComment = p.Comments.Nodes[0]
+	}
+	numComments := 0
+	for _, c := range p.Comments.Nodes {
+		if !strings.Contains(string(c.Body), CommentLogPrefix) {
+			break
+		}
+		numComments++
+	}
+
+	isApproved := false
+	isReviewRequired := false
+	isChangeRequested := false
+	switch p.ReviewDecision {
+	case githubv4.PullRequestReviewDecisionApproved:
+		isApproved = true
+	case githubv4.PullRequestReviewDecisionReviewRequired:
+		isReviewRequired = true
+	case githubv4.PullRequestReviewDecisionChangesRequested:
+		isChangeRequested = true
+	}
+	mergeable := false
+	if p.Mergeable == githubv4.MergeableStateMergeable {
+		mergeable = true
+	}
+
+	labels := []string{}
+	for _, l := range p.Labels.Nodes {
+		labels = append(labels, string(l.Name))
+	}
+	assignees := []string{}
+	for _, a := range p.Assignees.Nodes {
+		assignees = append(assignees, string(a.Login))
+	}
+	reviewers := []string{}
+	for _, r := range p.ReviewRequests.Nodes {
+		reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
+		for _, m := range r.RequestedReviewer.Team.Members.Nodes {
+			reviewers = append(reviewers, string(m.Login))
+		}
+	}
+
+	return &target.Target{
+		Number:                      n,
+		Title:                       string(p.Title),
+		Body:                        string(p.Body),
+		URL:                         string(p.URL),
+		Author:                      string(p.Author.Login),
+		Labels:                      labels,
+		Assignees:                   assignees,
+		Reviewers:                   reviewers,
+		IsIssue:                     false,
+		IsPullRequest:               true,
+		IsApproved:                  isApproved,
+		IsReviewRequired:            isReviewRequired,
+		IsChangeRequested:           isChangeRequested,
+		Mergeable:                   mergeable,
+		HoursElapsedSinceCreated:    int(now.Sub(p.CreatedAt.Time).Hours()),
+		HoursElapsedSinceUpdated:    int(now.Sub(p.UpdatedAt.Time).Hours()),
+		NumberOfComments:            len(p.Comments.Nodes),
+		LatestCommentAuthor:         string(latestComment.Author.Login),
+		LatestCommentBody:           string(latestComment.Body),
+		NumberOfConsecutiveComments: numComments,
+	}, nil
 }
 
 func httpClient(token string) *http.Client {
