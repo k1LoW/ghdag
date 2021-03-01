@@ -2,15 +2,19 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 
 	"github.com/antonmedv/expr"
+	"github.com/google/go-cmp/cmp"
 	"github.com/k1LoW/exec"
 	"github.com/k1LoW/ghdag/config"
 	"github.com/k1LoW/ghdag/env"
+	"github.com/k1LoW/ghdag/erro"
 	"github.com/k1LoW/ghdag/gh"
 	"github.com/k1LoW/ghdag/slk"
 	"github.com/k1LoW/ghdag/target"
@@ -150,16 +154,28 @@ func (r *Runner) Run(ctx context.Context) error {
 			if err := r.perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
+					if errors.As(err, &erro.AlreadyInStateError{}) {
+						r.log(fmt.Sprintf("Skip: %s", err))
+						return nil
+					}
 					r.errlog(fmt.Sprintf("%s", err))
 					return nil
 				}
 			} else {
+				if errors.As(err, &erro.AlreadyInStateError{}) {
+					r.log(fmt.Sprintf("Skip: %s", err))
+					return nil
+				}
 				r.errlog(fmt.Sprintf("%s", err))
 				if err := os.Setenv("GHDAG_ACTION_OK_ERROR", fmt.Sprintf("%s", err)); err != nil {
 					return err
 				}
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
+					if errors.As(err, &erro.AlreadyInStateError{}) {
+						r.log(fmt.Sprintf("Skip: %s", err))
+						return nil
+					}
 					r.errlog(fmt.Sprintf("%s", err))
 					return nil
 				}
@@ -192,13 +208,28 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		}
 		return nil
 	case len(a.Labels) > 0:
+		sortStringSlice(i.Labels)
+		sortStringSlice(a.Labels)
 		r.log(fmt.Sprintf("Set labels: %s", strings.Join(a.Labels, ", ")))
+		if cmp.Equal(i.Labels, a.Labels) {
+			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Labels, ", ")))
+		}
 		return r.github.SetLabels(ctx, i.Number, a.Labels)
 	case len(a.Assignees) > 0:
+		sortStringSlice(i.Assignees)
+		sortStringSlice(a.Assignees)
 		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(a.Assignees, ", ")))
+		if cmp.Equal(i.Assignees, a.Assignees) {
+			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Assignees, ", ")))
+		}
 		return r.github.SetAssignees(ctx, i.Number, a.Assignees)
 	case len(a.Reviewers) > 0:
+		sortStringSlice(i.Reviewers)
+		sortStringSlice(a.Reviewers)
 		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(a.Reviewers, ", ")))
+		if cmp.Equal(i.Reviewers, a.Reviewers) {
+			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Reviewers, ", ")))
+		}
 		return r.github.SetReviewers(ctx, i.Number, a.Reviewers)
 	case a.Comment != "":
 		c, err := env.ParseWithEnviron(a.Comment, env.EnvMap())
@@ -206,6 +237,9 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 			return err
 		}
 		r.log(fmt.Sprintf("Add comment: %s", c))
+		if cmp.Equal(i.LatestCommentBody, c) {
+			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))
+		}
 		return r.github.AddComment(ctx, i.Number, c)
 	case a.State != "":
 		r.log(fmt.Sprintf("Change state: %s", a.State))
@@ -255,4 +289,10 @@ func (r *Runner) debuglog(m string) {
 
 func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
+}
+
+func sortStringSlice(in []string) {
+	sort.Slice(in, func(i, j int) bool {
+		return in[i] < in[j]
+	})
 }
