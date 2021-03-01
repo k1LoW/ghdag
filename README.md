@@ -100,7 +100,7 @@ Name of task.
 
 #### `tasks[*].if:`
 
-The task will not be performed unless the conditions in the `if` section are met.
+The task will not be performed unless the condition in the `if` section is met.
 
 If the `if` section is missing, the task will not be performed unless it is called by another task.
 

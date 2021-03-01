@@ -126,18 +126,18 @@ func (r *Runner) Run(ctx context.Context) error {
 			}
 
 			if tq.task.If != "" {
-				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), tq.target.Dump())
+				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), dump)
 				if err != nil {
 					r.errlog(fmt.Sprintf("%s", err))
 					return nil
 				}
 				if !do.(bool) {
-					r.debuglog(fmt.Sprintf("[SKIP] %s", tq.task.If))
+					r.debuglog(fmt.Sprintf("[SKIP] the condition in the `if` section is not met (%s)", tq.task.If))
 					return nil
 				}
 			}
 			if tq.task.If == "" && !tq.called {
-				r.debuglog(fmt.Sprintf("[SKIP] %s", "(non `if:` section)"))
+				r.debuglog("[SKIP] the `if:` section is missing")
 				return nil
 			}
 
