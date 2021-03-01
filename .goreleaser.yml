@@ -42,12 +42,13 @@ snapshot:
 changelog:
   skip: true
 dockers:
-  - image_templates:
+  -
+    goos: linux
+    goarch: amd64
+    image_templates:
       - 'ghcr.io/k1low/ghdag:v{{ .Version }}'
       - 'ghcr.io/k1low/ghdag:latest'
     dockerfile: Dockerfile
-    binaries:
-      - ghdag
     build_flag_templates:
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.name={{.ProjectName}}"
