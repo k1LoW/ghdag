@@ -109,11 +109,23 @@ func (r *Runner) Run(ctx context.Context) error {
 			id := tq.task.Id
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
 
-			if err := os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", n)); err != nil {
-				return err
-			}
-			if err := os.Setenv("GHDAG_TARGET_URL", tq.target.URL); err != nil {
-				return err
+			dump := tq.target.Dump()
+			for k, v := range dump {
+				ek := strings.ToUpper(fmt.Sprintf("GHDAG_TARGET_%s", k))
+				switch v := v.(type) {
+				case int:
+					if err := os.Setenv(ek, fmt.Sprintf("%d", v)); err != nil {
+						return err
+					}
+				case string:
+					if err := os.Setenv(ek, v); err != nil {
+						return err
+					}
+				case []string:
+					if err := os.Setenv(ek, strings.Join(v, ",")); err != nil {
+						return err
+					}
+				}
 			}
 			if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
 				return err
@@ -126,18 +138,18 @@ func (r *Runner) Run(ctx context.Context) error {
 			}
 
 			if tq.task.If != "" {
-				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), tq.target.Dump())
+				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), dump)
 				if err != nil {
 					r.errlog(fmt.Sprintf("%s", err))
 					return nil
 				}
 				if !do.(bool) {
-					r.debuglog(fmt.Sprintf("[SKIP] %s", tq.task.If))
+					r.debuglog(fmt.Sprintf("[SKIP] the condition in the `if` section is not met (%s)", tq.task.If))
 					return nil
 				}
 			}
 			if tq.task.If == "" && !tq.called {
-				r.debuglog(fmt.Sprintf("[SKIP] %s", "(non `if:` section)"))
+				r.debuglog("[SKIP] the `if:` section is missing")
 				return nil
 			}
 
