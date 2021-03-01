@@ -237,7 +237,14 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 			return err
 		}
 		r.log(fmt.Sprintf("Add comment: %s", c))
-		if cmp.Equal(i.LatestCommentBody, c) {
+
+		if i.NumberOfConsecutiveComments >= 5 {
+			return fmt.Errorf("Too many comments in a row by ghdag: %d", i.NumberOfConsecutiveComments)
+		}
+
+		c = fmt.Sprintf("%s\n%s%s:%s -->\n", c, gh.CommentLogPrefix, t.Id, a.Type)
+
+		if i.LatestCommentBody == c {
 			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))
 		}
 		return r.github.AddComment(ctx, i.Number, c)

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ import (
 )
 
 const limit = 100
+const CommentLogPrefix = "<!-- ghdag:"
 
 type Client struct {
 	v3    *github.Client
@@ -208,7 +210,6 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		if i.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
-		cc := time.Time{}
 		latestComment := struct {
 			Author struct {
 				Login githubv4.String
@@ -216,11 +217,19 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			Body      githubv4.String
 			CreatedAt githubv4.DateTime
 		}{}
+		sort.Slice(i.Comments.Nodes, func(a, b int) bool {
+			// CreatedAt DESC
+			return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
+		})
+		if len(i.Comments.Nodes) > 0 {
+			latestComment = i.Comments.Nodes[0]
+		}
+		numComments := 0
 		for _, c := range i.Comments.Nodes {
-			if cc.Unix() < c.CreatedAt.Unix() {
-				latestComment = c
-				cc = c.CreatedAt.Time
+			if !strings.Contains(string(c.Body), CommentLogPrefix) {
+				break
 			}
+			numComments++
 		}
 
 		labels := []string{}
@@ -233,20 +242,21 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		}
 
 		t := &target.Target{
-			Number:                   n,
-			Title:                    string(i.Title),
-			Body:                     string(i.Body),
-			URL:                      string(i.URL),
-			Author:                   string(i.Author.Login),
-			Labels:                   labels,
-			Assignees:                assignees,
-			IsIssue:                  true,
-			IsPullRequest:            false,
-			HoursElapsedSinceCreated: int(now.Sub(i.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
-			NumberOfComments:         len(i.Comments.Nodes),
-			LatestCommentAuthor:      string(latestComment.Author.Login),
-			LatestCommentBody:        string(latestComment.Body),
+			Number:                      n,
+			Title:                       string(i.Title),
+			Body:                        string(i.Body),
+			URL:                         string(i.URL),
+			Author:                      string(i.Author.Login),
+			Labels:                      labels,
+			Assignees:                   assignees,
+			IsIssue:                     true,
+			IsPullRequest:               false,
+			HoursElapsedSinceCreated:    int(now.Sub(i.CreatedAt.Time).Hours()),
+			HoursElapsedSinceUpdated:    int(now.Sub(i.UpdatedAt.Time).Hours()),
+			NumberOfComments:            len(i.Comments.Nodes),
+			LatestCommentAuthor:         string(latestComment.Author.Login),
+			LatestCommentBody:           string(latestComment.Body),
+			NumberOfConsecutiveComments: numComments,
 		}
 
 		targets[n] = t
@@ -263,7 +273,6 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		if p.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
 		}
-		pc := time.Time{}
 		latestComment := struct {
 			Author struct {
 				Login githubv4.String
@@ -271,12 +280,21 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			Body      githubv4.String
 			CreatedAt githubv4.DateTime
 		}{}
-		for _, c := range p.Comments.Nodes {
-			if pc.Unix() < c.CreatedAt.Unix() {
-				latestComment = c
-				pc = c.CreatedAt.Time
-			}
+		sort.Slice(p.Comments.Nodes, func(a, b int) bool {
+			// CreatedAt DESC
+			return (p.Comments.Nodes[a].CreatedAt.Unix() > p.Comments.Nodes[b].CreatedAt.Unix())
+		})
+		if len(p.Comments.Nodes) > 0 {
+			latestComment = p.Comments.Nodes[0]
 		}
+		numComments := 0
+		for _, c := range p.Comments.Nodes {
+			if !strings.Contains(string(c.Body), CommentLogPrefix) {
+				break
+			}
+			numComments++
+		}
+
 		isApproved := false
 		isReviewRequired := false
 		isChangeRequested := false
@@ -310,25 +328,26 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 		}
 
 		t := &target.Target{
-			Number:                   n,
-			Title:                    string(p.Title),
-			Body:                     string(p.Body),
-			URL:                      string(p.URL),
-			Author:                   string(p.Author.Login),
-			Labels:                   labels,
-			Assignees:                assignees,
-			Reviewers:                reviewers,
-			IsIssue:                  false,
-			IsPullRequest:            true,
-			IsApproved:               isApproved,
-			IsReviewRequired:         isReviewRequired,
-			IsChangeRequested:        isChangeRequested,
-			Mergeable:                mergeable,
-			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
-			NumberOfComments:         len(p.Comments.Nodes),
-			LatestCommentAuthor:      string(latestComment.Author.Login),
-			LatestCommentBody:        string(latestComment.Body),
+			Number:                      n,
+			Title:                       string(p.Title),
+			Body:                        string(p.Body),
+			URL:                         string(p.URL),
+			Author:                      string(p.Author.Login),
+			Labels:                      labels,
+			Assignees:                   assignees,
+			Reviewers:                   reviewers,
+			IsIssue:                     false,
+			IsPullRequest:               true,
+			IsApproved:                  isApproved,
+			IsReviewRequired:            isReviewRequired,
+			IsChangeRequested:           isChangeRequested,
+			Mergeable:                   mergeable,
+			HoursElapsedSinceCreated:    int(now.Sub(p.CreatedAt.Time).Hours()),
+			HoursElapsedSinceUpdated:    int(now.Sub(p.UpdatedAt.Time).Hours()),
+			NumberOfComments:            len(p.Comments.Nodes),
+			LatestCommentAuthor:         string(latestComment.Author.Login),
+			LatestCommentBody:           string(latestComment.Body),
+			NumberOfConsecutiveComments: numComments,
 		}
 
 		targets[n] = t
@@ -367,7 +386,11 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		if i.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many issue comments (number: %d, limit: %d)", n, limit)
 		}
-		cc := time.Time{}
+
+		sort.Slice(i.Comments.Nodes, func(a, b int) bool {
+			// CreatedAt DESC
+			return (i.Comments.Nodes[a].CreatedAt.Unix() > i.Comments.Nodes[b].CreatedAt.Unix())
+		})
 		latestComment := struct {
 			Author struct {
 				Login githubv4.String
@@ -375,11 +398,15 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 			Body      githubv4.String
 			CreatedAt githubv4.DateTime
 		}{}
+		if len(i.Comments.Nodes) > 0 {
+			latestComment = i.Comments.Nodes[0]
+		}
+		numComments := 0
 		for _, c := range i.Comments.Nodes {
-			if cc.Unix() < c.CreatedAt.Unix() {
-				latestComment = c
-				cc = c.CreatedAt.Time
+			if !strings.Contains(string(c.Body), CommentLogPrefix) {
+				break
 			}
+			numComments++
 		}
 
 		labels := []string{}
@@ -392,20 +419,21 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		}
 
 		t := &target.Target{
-			Number:                   n,
-			Title:                    string(i.Title),
-			Body:                     string(i.Body),
-			URL:                      string(i.URL),
-			Author:                   string(i.Author.Login),
-			Labels:                   labels,
-			Assignees:                assignees,
-			IsIssue:                  true,
-			IsPullRequest:            false,
-			HoursElapsedSinceCreated: int(now.Sub(i.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated: int(now.Sub(i.UpdatedAt.Time).Hours()),
-			NumberOfComments:         len(i.Comments.Nodes),
-			LatestCommentAuthor:      string(latestComment.Author.Login),
-			LatestCommentBody:        string(latestComment.Body),
+			Number:                      n,
+			Title:                       string(i.Title),
+			Body:                        string(i.Body),
+			URL:                         string(i.URL),
+			Author:                      string(i.Author.Login),
+			Labels:                      labels,
+			Assignees:                   assignees,
+			IsIssue:                     true,
+			IsPullRequest:               false,
+			HoursElapsedSinceCreated:    int(now.Sub(i.CreatedAt.Time).Hours()),
+			HoursElapsedSinceUpdated:    int(now.Sub(i.UpdatedAt.Time).Hours()),
+			NumberOfComments:            len(i.Comments.Nodes),
+			LatestCommentAuthor:         string(latestComment.Author.Login),
+			LatestCommentBody:           string(latestComment.Body),
+			NumberOfConsecutiveComments: numComments,
 		}
 		return t, nil
 	} else {
@@ -416,7 +444,6 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		if p.Comments.PageInfo.HasNextPage {
 			return nil, fmt.Errorf("too many pull request comments (number: %d, limit: %d)", n, limit)
 		}
-		pc := time.Time{}
 		latestComment := struct {
 			Author struct {
 				Login githubv4.String
@@ -424,12 +451,21 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 			Body      githubv4.String
 			CreatedAt githubv4.DateTime
 		}{}
-		for _, c := range p.Comments.Nodes {
-			if pc.Unix() < c.CreatedAt.Unix() {
-				latestComment = c
-				pc = c.CreatedAt.Time
-			}
+		sort.Slice(p.Comments.Nodes, func(a, b int) bool {
+			// CreatedAt DESC
+			return (p.Comments.Nodes[a].CreatedAt.Unix() > p.Comments.Nodes[b].CreatedAt.Unix())
+		})
+		if len(p.Comments.Nodes) > 0 {
+			latestComment = p.Comments.Nodes[0]
 		}
+		numComments := 0
+		for _, c := range p.Comments.Nodes {
+			if !strings.Contains(string(c.Body), CommentLogPrefix) {
+				break
+			}
+			numComments++
+		}
+
 		isApproved := false
 		isReviewRequired := false
 		isChangeRequested := false
@@ -462,25 +498,26 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		}
 
 		t := &target.Target{
-			Number:                   n,
-			Title:                    string(p.Title),
-			Body:                     string(p.Body),
-			URL:                      string(p.URL),
-			Author:                   string(p.Author.Login),
-			Labels:                   labels,
-			Assignees:                assignees,
-			Reviewers:                reviewers,
-			IsIssue:                  false,
-			IsPullRequest:            true,
-			IsApproved:               isApproved,
-			IsReviewRequired:         isReviewRequired,
-			IsChangeRequested:        isChangeRequested,
-			Mergeable:                mergeable,
-			HoursElapsedSinceCreated: int(now.Sub(p.CreatedAt.Time).Hours()),
-			HoursElapsedSinceUpdated: int(now.Sub(p.UpdatedAt.Time).Hours()),
-			NumberOfComments:         len(p.Comments.Nodes),
-			LatestCommentAuthor:      string(latestComment.Author.Login),
-			LatestCommentBody:        string(latestComment.Body),
+			Number:                      n,
+			Title:                       string(p.Title),
+			Body:                        string(p.Body),
+			URL:                         string(p.URL),
+			Author:                      string(p.Author.Login),
+			Labels:                      labels,
+			Assignees:                   assignees,
+			Reviewers:                   reviewers,
+			IsIssue:                     false,
+			IsPullRequest:               true,
+			IsApproved:                  isApproved,
+			IsReviewRequired:            isReviewRequired,
+			IsChangeRequested:           isChangeRequested,
+			Mergeable:                   mergeable,
+			HoursElapsedSinceCreated:    int(now.Sub(p.CreatedAt.Time).Hours()),
+			HoursElapsedSinceUpdated:    int(now.Sub(p.UpdatedAt.Time).Hours()),
+			NumberOfComments:            len(p.Comments.Nodes),
+			LatestCommentAuthor:         string(latestComment.Author.Login),
+			LatestCommentBody:           string(latestComment.Body),
+			NumberOfConsecutiveComments: numComments,
 		}
 
 		return t, nil
