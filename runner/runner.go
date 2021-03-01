@@ -109,11 +109,23 @@ func (r *Runner) Run(ctx context.Context) error {
 			id := tq.task.Id
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
 
-			if err := os.Setenv("GHDAG_TARGET_NUMBER", fmt.Sprintf("%d", n)); err != nil {
-				return err
-			}
-			if err := os.Setenv("GHDAG_TARGET_URL", tq.target.URL); err != nil {
-				return err
+			dump := tq.target.Dump()
+			for k, v := range dump {
+				ek := strings.ToUpper(fmt.Sprintf("GHDAG_TARGET_%s", k))
+				switch v := v.(type) {
+				case int:
+					if err := os.Setenv(ek, fmt.Sprintf("%d", v)); err != nil {
+						return err
+					}
+				case string:
+					if err := os.Setenv(ek, v); err != nil {
+						return err
+					}
+				case []string:
+					if err := os.Setenv(ek, strings.Join(v, ",")); err != nil {
+						return err
+					}
+				}
 			}
 			if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
 				return err
