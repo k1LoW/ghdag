@@ -122,7 +122,7 @@ func (r *Runner) Run(ctx context.Context) error {
 						return err
 					}
 				case []string:
-					if err := os.Setenv(ek, strings.Join(v, ",")); err != nil {
+					if err := os.Setenv(ek, strings.Join(v, ", ")); err != nil {
 						return err
 					}
 				}
