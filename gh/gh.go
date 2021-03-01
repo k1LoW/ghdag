@@ -513,12 +513,18 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 		assignees = append(assignees, string(a.Login))
 	}
 	reviewers := []string{}
+	codeOwners := []string{}
 	for _, r := range p.ReviewRequests.Nodes {
+		var k string
 		if r.RequestedReviewer.User.Login != "" {
-			reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
+			k = string(r.RequestedReviewer.User.Login)
 		}
 		if r.RequestedReviewer.Team.Slug != "" {
-			reviewers = append(reviewers, fmt.Sprintf("%s/%s", string(r.RequestedReviewer.Team.Organization.Login), string(r.RequestedReviewer.Team.Slug)))
+			k = fmt.Sprintf("%s/%s", string(r.RequestedReviewer.Team.Organization.Login), string(r.RequestedReviewer.Team.Slug))
+		}
+		reviewers = append(reviewers, k)
+		if r.AsCodeOwner.(bool) {
+			codeOwners = append(codeOwners, k)
 		}
 	}
 
@@ -531,6 +537,7 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 		Labels:                      labels,
 		Assignees:                   assignees,
 		Reviewers:                   reviewers,
+		CodeOwners:                  codeOwners,
 		IsIssue:                     false,
 		IsPullRequest:               true,
 		IsApproved:                  isApproved,

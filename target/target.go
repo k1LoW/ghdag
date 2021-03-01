@@ -16,6 +16,7 @@ type Target struct {
 	Labels                      []string `json:"labels"`
 	Assignees                   []string `json:"assignees"`
 	Reviewers                   []string `json:"reviewers"`
+	CodeOwners                  []string `json:"code_owners"`
 	IsIssue                     bool     `json:"is_issue"`
 	IsPullRequest               bool     `json:"is_pull_request"`
 	IsApproved                  bool     `json:"is_approved"`
