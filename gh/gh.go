@@ -130,11 +130,10 @@ type pullRequestNode struct {
 					Login githubv4.String
 				} `graphql:"... on User"`
 				Team struct {
-					Members struct {
-						Nodes []struct {
-							Login githubv4.String
-						}
+					Organization struct {
+						Login githubv4.String
 					}
+					Slug githubv4.String
 				} `graphql:"... on Team"`
 			}
 		}
@@ -298,7 +297,8 @@ func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) er
 	for _, r := range reviewers {
 		trimed := strings.Trim(r, "@")
 		if strings.Contains(trimed, "/") {
-			rt[trimed] = struct{}{}
+			splitted := strings.Split(trimed, "/")
+			rt[splitted[1]] = struct{}{}
 			continue
 		}
 		ru[trimed] = struct{}{}
@@ -317,13 +317,16 @@ func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) er
 		du = append(du, u.GetLogin())
 	}
 	for _, t := range current.Teams {
-		if _, ok := rt[t.GetName()]; ok {
-			delete(rt, t.GetName())
+		if _, ok := rt[t.GetSlug()]; ok {
+			delete(rt, t.GetSlug())
 			continue
 		}
-		dt = append(dt, t.GetName())
+		dt = append(dt, t.GetSlug())
 	}
 	if len(du) > 0 || len(dt) > 0 {
+		if len(du) == 0 {
+			du = append(du, "ghdag-dummy")
+		}
 		if _, err := c.v3.PullRequests.RemoveReviewers(ctx, c.owner, c.repo, n, github.ReviewersRequest{
 			Reviewers:     du,
 			TeamReviewers: dt,
@@ -511,9 +514,11 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 	}
 	reviewers := []string{}
 	for _, r := range p.ReviewRequests.Nodes {
-		reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
-		for _, m := range r.RequestedReviewer.Team.Members.Nodes {
-			reviewers = append(reviewers, string(m.Login))
+		if r.RequestedReviewer.User.Login != "" {
+			reviewers = append(reviewers, string(r.RequestedReviewer.User.Login))
+		}
+		if r.RequestedReviewer.Team.Slug != "" {
+			reviewers = append(reviewers, fmt.Sprintf("%s/%s", string(r.RequestedReviewer.Team.Organization.Login), string(r.RequestedReviewer.Team.Slug)))
 		}
 	}
 
