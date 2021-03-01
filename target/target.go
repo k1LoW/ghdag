@@ -8,25 +8,26 @@ import (
 
 // Target is Issue or Pull request
 type Target struct {
-	Number                   int      `json:"number"`
-	Title                    string   `json:"title"`
-	Body                     string   `json:"body"`
-	URL                      string   `json:"url"`
-	Author                   string   `json:"author"`
-	Labels                   []string `json:"labels"`
-	Assignees                []string `json:"assignees"`
-	Reviewers                []string `json:"reviewers"`
-	IsIssue                  bool     `json:"is_issue"`
-	IsPullRequest            bool     `json:"is_pull_request"`
-	IsApproved               bool     `json:"is_approved"`
-	IsReviewRequired         bool     `json:"is_review_required"`
-	IsChangeRequested        bool     `json:"is_change_requested"`
-	Mergeable                bool     `json:"mergeable"`
-	HoursElapsedSinceCreated int      `json:"hours_elapsed_since_created"`
-	HoursElapsedSinceUpdated int      `json:"hours_elapsed_since_updated"`
-	NumberOfComments         int      `json:"number_of_comments"`
-	LatestCommentAuthor      string   `json:"latest_comment_author"`
-	LatestCommentBody        string   `json:"latest_comment_body"`
+	Number                      int      `json:"number"`
+	Title                       string   `json:"title"`
+	Body                        string   `json:"body"`
+	URL                         string   `json:"url"`
+	Author                      string   `json:"author"`
+	Labels                      []string `json:"labels"`
+	Assignees                   []string `json:"assignees"`
+	Reviewers                   []string `json:"reviewers"`
+	IsIssue                     bool     `json:"is_issue"`
+	IsPullRequest               bool     `json:"is_pull_request"`
+	IsApproved                  bool     `json:"is_approved"`
+	IsReviewRequired            bool     `json:"is_review_required"`
+	IsChangeRequested           bool     `json:"is_change_requested"`
+	Mergeable                   bool     `json:"mergeable"`
+	HoursElapsedSinceCreated    int      `json:"hours_elapsed_since_created"`
+	HoursElapsedSinceUpdated    int      `json:"hours_elapsed_since_updated"`
+	NumberOfComments            int      `json:"number_of_comments"`
+	LatestCommentAuthor         string   `json:"latest_comment_author"`
+	LatestCommentBody           string   `json:"latest_comment_body"`
+	NumberOfConsecutiveComments int      `json:"-"`
 }
 
 func (t *Target) Dump() map[string]interface{} {
