@@ -132,12 +132,12 @@ func (r *Runner) Run(ctx context.Context) error {
 					return nil
 				}
 				if !do.(bool) {
-					r.debuglog(fmt.Sprintf("Skip: %s", tq.task.If))
+					r.debuglog(fmt.Sprintf("[SKIP] %s", tq.task.If))
 					return nil
 				}
 			}
 			if tq.task.If == "" && !tq.called {
-				r.debuglog(fmt.Sprintf("Skip: %s", "(non `if:` section)"))
+				r.debuglog(fmt.Sprintf("[SKIP] %s", "(non `if:` section)"))
 				return nil
 			}
 
@@ -155,7 +155,7 @@ func (r *Runner) Run(ctx context.Context) error {
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
 					if errors.As(err, &erro.AlreadyInStateError{}) {
-						r.log(fmt.Sprintf("Skip: %s", err))
+						r.log(fmt.Sprintf("[SKIP] %s", err))
 						return nil
 					}
 					r.errlog(fmt.Sprintf("%s", err))
@@ -163,7 +163,7 @@ func (r *Runner) Run(ctx context.Context) error {
 				}
 			} else {
 				if errors.As(err, &erro.AlreadyInStateError{}) {
-					r.log(fmt.Sprintf("Skip: %s", err))
+					r.log(fmt.Sprintf("[SKIP] %s", err))
 					return nil
 				}
 				r.errlog(fmt.Sprintf("%s", err))
@@ -173,7 +173,7 @@ func (r *Runner) Run(ctx context.Context) error {
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
 					if errors.As(err, &erro.AlreadyInStateError{}) {
-						r.log(fmt.Sprintf("Skip: %s", err))
+						r.log(fmt.Sprintf("[SKIP] %s", err))
 						return nil
 					}
 					r.errlog(fmt.Sprintf("%s", err))
