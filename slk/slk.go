@@ -32,17 +32,20 @@ func NewClient() (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) PostMessage(ctx context.Context, m string) error {
+func (c *Client) PostMessage(ctx context.Context, m string, mentions []string) error {
 	switch {
 	case c.client != nil:
-		return c.postMessage(ctx, m)
+		return c.postMessage(ctx, m, mentions)
 	case os.Getenv("SLACK_API_TOKEN") != "":
 		// temporary
 		c.client = slack.New(os.Getenv("SLACK_API_TOKEN"))
-		err := c.postMessage(ctx, m)
+		err := c.postMessage(ctx, m, mentions)
 		c.client = nil
 		return err
 	case os.Getenv("SLACK_WEBHOOK_URL") != "":
+		if len(mentions) > 0 {
+			return errors.New("notification using webhook does not support mentions")
+		}
 		return c.postWebbookMessage(ctx, m)
 	default:
 		return errors.New("not found environment for Slack: SLACK_API_TOKEN or SLACK_WEBHOOK_URL")
@@ -50,7 +53,7 @@ func (c *Client) PostMessage(ctx context.Context, m string) error {
 	return nil
 }
 
-func (c *Client) postMessage(ctx context.Context, m string) error {
+func (c *Client) postMessage(ctx context.Context, m string, mentions []string) error {
 	if os.Getenv("SLACK_CHANNEL") == "" {
 		return errors.New("not found environment for Slack: SLACK_CHANNEL")
 	}
@@ -59,23 +62,18 @@ func (c *Client) postMessage(ctx context.Context, m string) error {
 	if err != nil {
 		return err
 	}
-	if os.Getenv("SLACK_MENTIONS") != "" {
-		mentions := strings.Split(os.Getenv("SLACK_MENTIONS"), " ")
-		links := []string{}
-		for _, mention := range mentions {
-			l, err := c.getMentionLinkByName(ctx, mention)
-			if err != nil {
-				return err
-			}
-			links = append(links, l)
-		}
-		links, err = sampleByEnv(links, "SLACK_MENTIONS_SAMPLE")
+	links := []string{}
+	for _, mention := range mentions {
+		l, err := c.getMentionLinkByName(ctx, mention)
 		if err != nil {
 			return err
 		}
-
+		links = append(links, l)
+	}
+	if len(links) > 0 {
 		m = fmt.Sprintf("%s %s", strings.Join(links, " "), m)
 	}
+
 	if _, _, err := c.client.PostMessageContext(ctx, channelID, slack.MsgOptionBlocks(buildBlocks(m)...)); err != nil {
 		return err
 	}
@@ -83,9 +81,6 @@ func (c *Client) postMessage(ctx context.Context, m string) error {
 }
 
 func (c *Client) postWebbookMessage(ctx context.Context, m string) error {
-	if os.Getenv("SLACK_MENTIONS") != "" {
-		return errors.New("notification using webhook does not support mentions: SLACK_MENTIONS")
-	}
 	url := os.Getenv("SLACK_WEBHOOK_URL")
 	msg := buildWebhookMessage(m)
 	return slack.PostWebhookContext(ctx, url, msg)

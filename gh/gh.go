@@ -3,13 +3,11 @@ package gh
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -267,18 +265,8 @@ func (c *Client) SetLabels(ctx context.Context, n int, labels []string) error {
 }
 
 func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) error {
-	as, err := c.users(ctx, assignees)
-	if err != nil {
-		return err
-	}
-
-	as, err = sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
-	if err != nil {
-		return err
-	}
-
 	if _, _, err := c.v3.Issues.Edit(ctx, c.owner, c.repo, n, &github.IssueRequest{
-		Assignees: &as,
+		Assignees: &assignees,
 	}); err != nil {
 		return err
 	}
@@ -286,12 +274,6 @@ func (c *Client) SetAssignees(ctx context.Context, n int, assignees []string) er
 }
 
 func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) error {
-	var err error
-	reviewers, err = sampleByEnv(reviewers, "GITHUB_REVIEWERS_SAMPLE")
-	if err != nil {
-		return err
-	}
-
 	ru := map[string]struct{}{}
 	rt := map[string]struct{}{}
 	for _, r := range reviewers {
@@ -371,7 +353,7 @@ func (c *Client) MergePullRequest(ctx context.Context, n int) error {
 	return err
 }
 
-func (c *Client) users(ctx context.Context, in []string) ([]string, error) {
+func (c *Client) ResolveUsers(ctx context.Context, in []string) ([]string, error) {
 	res := []string{}
 	for _, inu := range in {
 		trimed := strings.Trim(inu, "@")
@@ -589,20 +571,4 @@ func unique(in []string) []string {
 		u = append(u, s)
 	}
 	return u
-}
-
-func sampleByEnv(in []string, envKey string) ([]string, error) {
-	if os.Getenv(envKey) == "" {
-		return in, nil
-	}
-	sn, err := strconv.Atoi(os.Getenv(envKey))
-	if err != nil {
-		return nil, err
-	}
-	if len(in) < sn {
-		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
-		in = in[:sn]
-	}
-	return in, nil
 }
