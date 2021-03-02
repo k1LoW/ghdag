@@ -2,8 +2,10 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"sort"
@@ -70,8 +72,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	r.slack = sc
 
-	r.log(fmt.Sprintf("Fetch open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
-	targets, err := r.github.FetchTargets(ctx)
+	targets, err := r.fetchTargets(ctx)
 	if err != nil {
 		return err
 	}
@@ -338,6 +339,25 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	return nil
 }
 
+func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
+	en := os.Getenv("GITHUB_EVENT_NAME")
+	ep := os.Getenv("GITHUB_EVENT_PATH")
+	if strings.HasPrefix(en, "issue") || strings.HasPrefix(en, "pull_request") {
+		n, err := detectTargetNumber(ep)
+		if err != nil {
+			return nil, err
+		}
+		r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
+		t, err := r.github.FetchTarget(ctx, n)
+		if err != nil {
+			return nil, err
+		}
+		return target.Targets{n: t}, nil
+	}
+	r.log(fmt.Sprintf("Fetch all open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTargets(ctx)
+}
+
 func (r *Runner) log(m string) {
 	log.Info().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
 }
@@ -352,6 +372,42 @@ func (r *Runner) debuglog(m string) {
 
 func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
+}
+
+func detectTargetNumber(p string) (int, error) {
+	b, err := ioutil.ReadFile(p)
+	if err != nil {
+		return 0, err
+	}
+	s := struct {
+		PullRequest struct {
+			Number int    `json:"number,omitempty"`
+			State  string `json:"state,omitempty"`
+		} `json:"pull_request,omitempty"`
+		Issue struct {
+			Number int    `json:"number,omitempty"`
+			State  string `json:"state,omitempty"`
+		} `json:"issue,omitempty"`
+	}{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return 0, err
+	}
+	n := 0
+	switch {
+	case s.PullRequest.Number > 0:
+		n = s.PullRequest.Number
+		if s.PullRequest.State != "open" {
+			return n, fmt.Errorf("#%d is not opened: %s", n, s.PullRequest.State)
+		}
+	case s.Issue.Number > 0:
+		n = s.Issue.Number
+		if s.Issue.State != "open" {
+			return n, fmt.Errorf("#%d is not opened: %s", n, s.Issue.State)
+		}
+	default:
+		return 0, fmt.Errorf("can not parse: %s", p)
+	}
+	return n, nil
 }
 
 func sampleByEnv(in []string, envKey string) ([]string, error) {
