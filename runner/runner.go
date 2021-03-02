@@ -343,9 +343,12 @@ func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 	en := os.Getenv("GITHUB_EVENT_NAME")
 	ep := os.Getenv("GITHUB_EVENT_PATH")
 	if strings.HasPrefix(en, "issue") || strings.HasPrefix(en, "pull_request") {
-		n, err := detectTargetNumber(ep)
+		n, state, err := detectTargetNumber(ep)
 		if err != nil {
 			return nil, err
+		}
+		if state != "open" {
+			return nil, fmt.Errorf("#%d is not opened: %s", n, state)
 		}
 		r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
 		t, err := r.github.FetchTarget(ctx, n)
@@ -374,10 +377,10 @@ func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
 }
 
-func detectTargetNumber(p string) (int, error) {
+func detectTargetNumber(p string) (int, string, error) {
 	b, err := ioutil.ReadFile(p)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	s := struct {
 		PullRequest struct {
@@ -390,24 +393,15 @@ func detectTargetNumber(p string) (int, error) {
 		} `json:"issue,omitempty"`
 	}{}
 	if err := json.Unmarshal(b, &s); err != nil {
-		return 0, err
+		return 0, "", err
 	}
-	n := 0
 	switch {
 	case s.PullRequest.Number > 0:
-		n = s.PullRequest.Number
-		if s.PullRequest.State != "open" {
-			return n, fmt.Errorf("#%d is not opened: %s", n, s.PullRequest.State)
-		}
+		return s.PullRequest.Number, s.PullRequest.State, nil
 	case s.Issue.Number > 0:
-		n = s.Issue.Number
-		if s.Issue.State != "open" {
-			return n, fmt.Errorf("#%d is not opened: %s", n, s.Issue.State)
-		}
-	default:
-		return 0, fmt.Errorf("can not parse: %s", p)
+		return s.Issue.Number, s.Issue.State, nil
 	}
-	return n, nil
+	return 0, "", fmt.Errorf("can not parse: %s", p)
 }
 
 func sampleByEnv(in []string, envKey string) ([]string, error) {
