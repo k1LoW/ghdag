@@ -1,3 +1,8 @@
+## [v0.1.1](https://github.com/k1LoW/ghdag/compare/v0.1.0...v0.1.1) (2021-03-02)
+
+* Fix GHDAG_TARGET_* environment variables are not set [#16](https://github.com/k1LoW/ghdag/pull/16) ([k1LoW](https://github.com/k1LoW))
+* Fix sampling [#15](https://github.com/k1LoW/ghdag/pull/15) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.1.0](https://github.com/k1LoW/ghdag/compare/f4ae05b30c05...v0.1.0) (2021-03-02)
 
 * Add variable `code_owners` [#14](https://github.com/k1LoW/ghdag/pull/14) ([k1LoW](https://github.com/k1LoW))
