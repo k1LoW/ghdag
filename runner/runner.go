@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/antonmedv/expr"
 	"github.com/google/go-cmp/cmp"
@@ -228,21 +231,34 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		}
 		return r.github.SetLabels(ctx, i.Number, a.Labels)
 	case len(a.Assignees) > 0:
+		as, err := r.github.ResolveUsers(ctx, a.Assignees)
+		if err != nil {
+			return err
+		}
 		sortStringSlice(i.Assignees)
-		sortStringSlice(a.Assignees)
-		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(a.Assignees, ", ")))
-		if cmp.Equal(i.Assignees, a.Assignees) {
+		as, err = sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
+		if err != nil {
+			return err
+		}
+		sortStringSlice(as)
+		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(as, ", ")))
+		if cmp.Equal(i.Assignees, as) {
 			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Assignees, ", ")))
 		}
-		return r.github.SetAssignees(ctx, i.Number, a.Assignees)
+		return r.github.SetAssignees(ctx, i.Number, as)
 	case len(a.Reviewers) > 0:
-		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(a.Reviewers, ", ")))
+		reviewers, err := sampleByEnv(a.Reviewers, "GITHUB_REVIEWERS_SAMPLE")
+		if err != nil {
+			return err
+		}
+
+		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(reviewers, ", ")))
 
 		rb := i.NoCodeOwnerReviewers()
 		sortStringSlice(rb)
 
 		ra := []string{}
-		for _, r := range a.Reviewers {
+		for _, r := range reviewers {
 			if contains(i.CodeOwners, r) {
 				continue
 			}
@@ -286,8 +302,13 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		if err != nil {
 			return err
 		}
+		mentions := strings.Split(os.Getenv("SLACK_MENTIONS"), " ")
+		mentions, err = sampleByEnv(mentions, "SLACK_MENTIONS_SAMPLE")
+		if err != nil {
+			return err
+		}
 		r.log(fmt.Sprintf("Send notification: %s", n))
-		return r.slack.PostMessage(ctx, n)
+		return r.slack.PostMessage(ctx, n, mentions)
 	case len(a.Next) > 0:
 		r.log(fmt.Sprintf("Call next task: %s", strings.Join(a.Next, ", ")))
 		for _, id := range a.Next {
@@ -319,6 +340,22 @@ func (r *Runner) debuglog(m string) {
 
 func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
+}
+
+func sampleByEnv(in []string, envKey string) ([]string, error) {
+	if os.Getenv(envKey) == "" {
+		return in, nil
+	}
+	sn, err := strconv.Atoi(os.Getenv(envKey))
+	if err != nil {
+		return nil, err
+	}
+	if len(in) < sn {
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
+		in = in[:sn]
+	}
+	return in, nil
 }
 
 func contains(s []string, e string) bool {
