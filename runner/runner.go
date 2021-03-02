@@ -116,16 +116,28 @@ func (r *Runner) Run(ctx context.Context) error {
 			for k, v := range dump {
 				ek := strings.ToUpper(fmt.Sprintf("GHDAG_TARGET_%s", k))
 				switch v := v.(type) {
-				case int:
-					if err := os.Setenv(ek, fmt.Sprintf("%d", v)); err != nil {
+				case bool:
+					ev := "true"
+					if !v {
+						ev = "false"
+					}
+					if err := os.Setenv(ek, ev); err != nil {
+						return err
+					}
+				case float64:
+					if err := os.Setenv(ek, fmt.Sprintf("%g", v)); err != nil {
 						return err
 					}
 				case string:
 					if err := os.Setenv(ek, v); err != nil {
 						return err
 					}
-				case []string:
-					if err := os.Setenv(ek, strings.Join(v, ", ")); err != nil {
+				case []interface{}:
+					ev := []string{}
+					for _, i := range v {
+						ev = append(ev, i.(string))
+					}
+					if err := os.Setenv(ek, strings.Join(ev, ", ")); err != nil {
 						return err
 					}
 				}
