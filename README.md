@@ -208,10 +208,10 @@ Action: Call next tasks.
 #### Required scope of `SLACK_API_TOKEN`
 
 - `channel:read`
-- `chat.write`
-- `chat.write.public`
-- `users.read`
-- `usergroups.read`
+- `chat:write`
+- `chat:write.public`
+- `users:read`
+- `usergroups:read`
 
 ## Install
 
