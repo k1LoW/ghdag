@@ -1,3 +1,7 @@
+## [v0.2.3](https://github.com/k1LoW/ghdag/compare/v0.2.2...v0.2.3) (2021-03-03)
+
+* Increase task queue size [#20](https://github.com/k1LoW/ghdag/pull/20) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.2.2](https://github.com/k1LoW/ghdag/compare/v0.2.1...v0.2.2) (2021-03-03)
 
 * Fix sampleByEnv [#19](https://github.com/k1LoW/ghdag/pull/19) ([k1LoW](https://github.com/k1LoW))
