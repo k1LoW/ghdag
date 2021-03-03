@@ -86,12 +86,17 @@ $ git push origin
 
 And, see `https://github.com/[owner]/[repo]/actions`
 
-| Event that trigger workflows | Issues and pull requests fetched by `ghdag` |
+#### Issues and pull requests targeted by ghdag
+
+:memo: The issues and pull requests that `ghdag` fetches varies depending on the environment in which it is run.
+
+| Environment or [Event that trigger workflows](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request_target) for GitHub Actions | Issues and pull requests fetched by `ghdag` |
 | --- | --- |
-| `issues` | A **single** issue that triggered the event |
-| `issue_comment` | A **single** issue or pull request that triggered the event |
-| `pull_request` `pull_request_*` | A **single** pull request that triggered the event |
-| Other events | **All** opened issues and pull requests |
+| On your machine | **All** `opened` and `not draft` issues and pull requests |
+| `issues` | A **single** `opened` issue that triggered the event |
+| `issue_comment` | A **single** `opened` and `not draft` issue or pull request that triggered the event |
+| `pull_request` `pull_request_*` | A **single** `opened` and `not draft` pull request that triggered the event |
+| Other events | **All** `opened` and `not draft` issues and pull requests |
 
 ## Workflow syntax
 
@@ -204,35 +209,46 @@ A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to 
 
 #### `tasks[*].<action_type>.run:`
 
-Action: Execute command.
+Execute command using `sh -c`.
 
 #### `tasks[*].<action_type>.labels:`
 
-Action: Update labels.
+Update the labels of the target issue or pull request.
 
 #### `tasks[*].<action_type>.assignees:`
 
-Action: Update assignees.
+Update the assignees of the target issue or pull request.
 
 #### `tasks[*].<action_type>.reviewers:`
 
-Action: Update reviewers.
+Update the reviewers for the target pull request.
+
+However, [Code owners](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners) has already been registered as a reviewer, so it is excluded.
 
 #### `tasks[*].<action_type>.comment:`
 
-Action: Add comment.
+Add new comment to the target issue or pull request.
 
 #### `tasks[*].<action_type>.state:`
 
-Action: Change state.
+Change state the the target issue or pull request.
+
+| Target | Changeable states |
+| --- | --- |
+| Issue | `close` |
+| Pull request | `close` `merge` |
 
 #### `tasks[*].<action_type>.notify:`
 
-Action: Notify message using Slack.
+Send notify message to Slack channel.
+
+##### Required environment variables
+
+- ( `SLACK_API_TOKEN` and `SLACK_CHANNEL` ) or `SLACK_WEBHOOK_URL`
 
 #### `tasks[*].<action_type>.next:`
 
-Action: Call next tasks.
+Call next tasks in the same session.
 
 ## Environment variables for configuration
 
