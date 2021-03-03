@@ -235,7 +235,7 @@ Action: Call next tasks.
 | `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` section. | - |
 | `SLACK_MENTIONS` | Mentions to be given to notifications | - |
 | `SLACK_MENTIONS_SAMPLE` | Number of users to randomly select from those listed in `SLACK_MENTIONS`. | - |
-| `GHDAG_SAMPLE_WITH_SAME_SEED` | Sample using the same seed as the previous task or not. | - |
+| `GHDAG_SAMPLE_WITH_SAME_SEED` | Sample using the same random seed as the previous task or not. | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
