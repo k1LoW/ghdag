@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestDetectTargetNumber(t *testing.T) {
@@ -59,6 +61,43 @@ func TestSampleByEnv(t *testing.T) {
 		}
 		if len(got) != tt.want {
 			t.Errorf("got %v\nwant %v", got, tt.want)
+		}
+	}
+}
+
+func TestSampleByEnvWithSameSeed(t *testing.T) {
+	tests := []struct {
+		enable bool
+		diff   bool
+	}{
+		{false, true},
+		{true, false},
+	}
+	for _, tt := range tests {
+		os.Setenv("GHDAG_SAMPLE_WITH_SAME_SEED", fmt.Sprintf("%t", tt.enable))
+		r, err := New(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		a := []string{}
+		b := []string{}
+		for i := 0; i < 100; i++ {
+			a = append(a, fmt.Sprintf("%d", i))
+			b = append(b, fmt.Sprintf("%d", i))
+		}
+		envKey := "TEST_SAMPLE_BY_ENV"
+		os.Setenv(envKey, "99")
+
+		got, err := r.sampleByEnv(a, envKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got2, err := r.sampleByEnv(b, envKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(got, got2, nil); (diff != "") != tt.diff {
+			t.Error("sample error")
 		}
 	}
 }
