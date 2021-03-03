@@ -35,6 +35,7 @@ type Runner struct {
 	envCache  []string
 	mu        sync.Mutex
 	logPrefix string
+	seed      int64
 }
 
 func New(c *config.Config) (*Runner, error) {
@@ -44,6 +45,7 @@ func New(c *config.Config) (*Runner, error) {
 		slack:     nil,
 		envCache:  os.Environ(),
 		logPrefix: "",
+		seed:      time.Now().UnixNano(),
 	}, nil
 }
 
@@ -373,13 +375,19 @@ func (r *Runner) sampleByEnv(in []string, envKey string) ([]string, error) {
 	if os.Getenv(envKey) == "" {
 		return in, nil
 	}
-	r.debuglog(fmt.Sprintf("env %s is not set for sampling", envKey))
+	r.debuglog(fmt.Sprintf("env %s is set for sampling", envKey))
 	sn, err := strconv.Atoi(os.Getenv(envKey))
 	if err != nil {
 		return nil, err
 	}
 	if len(in) > sn {
-		rand.Seed(time.Now().UnixNano())
+		seed := r.seed
+		k := "GHDAG_SAMPLE_WITH_SAME_SEED"
+		if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
+			seed = time.Now().UnixNano()
+			r.seed = seed
+		}
+		rand.Seed(seed)
 		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
 		in = in[:sn]
 	}
