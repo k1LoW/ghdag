@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v33/github"
+	"github.com/k1LoW/ghdag/erro"
 	"github.com/k1LoW/ghdag/target"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -254,7 +255,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		// Pull request
 		p := q.Repogitory.IssueOrPullRequest.PullRequest
 		if bool(p.IsDraft) {
-			return nil, fmt.Errorf("pull request #%d is draft", int(p.Number))
+			return nil, erro.NewNotOpenError(fmt.Errorf("pull request #%d is draft", int(p.Number)))
 		}
 		return buildTargetFromPullRequest(p, now)
 	}

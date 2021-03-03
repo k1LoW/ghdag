@@ -57,6 +57,8 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.log("Start session")
 	defer func() {
 		_ = r.revertEnv()
+		r.logPrefix = ""
+		r.log("Session finished")
 	}()
 	if err := r.config.Env.Setenv(); err != nil {
 		return err
@@ -73,11 +75,15 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.slack = sc
 
 	targets, err := r.fetchTargets(ctx)
+	maxDigits := targets.MaxDigits()
+	r.log(fmt.Sprintf("%d issues and pull requests are fetched", len(targets)))
+	if errors.As(err, &erro.NotOpenError{}) {
+		r.log(fmt.Sprintf("[SKIP] %s", err))
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	maxDigits := targets.MaxDigits()
-	r.log(fmt.Sprintf("%d issues and pull requests are fetched", len(targets)))
 	tasks := r.config.Tasks
 	r.log(fmt.Sprintf("%d tasks are loaded", len(tasks)))
 	maxLength := tasks.MaxLengthID()
@@ -173,6 +179,10 @@ func (r *Runner) Run(ctx context.Context) error {
 				// Update target
 				target, err := r.github.FetchTarget(ctx, tq.target.Number)
 				if err != nil {
+					if errors.As(err, &erro.NotOpenError{}) {
+						r.log(fmt.Sprintf("[SKIP] %s", err))
+						return nil
+					}
 					return err
 				}
 				tq.target = target
@@ -214,9 +224,6 @@ func (r *Runner) Run(ctx context.Context) error {
 			return err
 		}
 	}
-
-	r.logPrefix = ""
-	r.log("Session finished")
 	return nil
 }
 
@@ -348,7 +355,7 @@ func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 			return nil, err
 		}
 		if state != "open" {
-			return nil, fmt.Errorf("#%d is not opened: %s", n, state)
+			return nil, erro.NewNotOpenError(fmt.Errorf("#%d is not opened: %s", n, state))
 		}
 		r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
 		t, err := r.github.FetchTarget(ctx, n)
