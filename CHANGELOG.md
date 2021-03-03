@@ -1,3 +1,9 @@
+## [v0.3.0](https://github.com/k1LoW/ghdag/compare/v0.2.3...v0.3.0) (2021-03-04)
+
+* Add an environment variable `GHDAG_SAMPLE_WITH_SAME_SEED` for sampling using the same seed as in the previous task. [#23](https://github.com/k1LoW/ghdag/pull/23) ([k1LoW](https://github.com/k1LoW))
+* Generate a workflow YAML file for GitHub Actions, when `ghdag init` is executed [#22](https://github.com/k1LoW/ghdag/pull/22) ([k1LoW](https://github.com/k1LoW))
+* Add ghdag workflow [#21](https://github.com/k1LoW/ghdag/pull/21) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.2.3](https://github.com/k1LoW/ghdag/compare/v0.2.2...v0.2.3) (2021-03-03)
 
 * Increase task queue size [#20](https://github.com/k1LoW/ghdag/pull/20) ([k1LoW](https://github.com/k1LoW))
