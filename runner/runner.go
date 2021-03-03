@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -385,7 +386,7 @@ func (r *Runner) revertEnv() error {
 }
 
 func detectTargetNumber(p string) (int, string, error) {
-	b, err := ioutil.ReadFile(p)
+	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {
 		return 0, "", err
 	}
