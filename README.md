@@ -66,7 +66,7 @@ $ export GITHUB_REPOGITORY=k1LoW/myrepo
 $ ghdag run myworkflow.yml
 2021-02-28T00:26:41+09:00 [INFO] ghdag version 0.2.3
 2021-02-28T00:26:41+09:00 [INFO] Start session
-2021-02-28T00:26:41+09:00 [INFO] Fetch open issues and pull requests from k1LoW/myrepo
+2021-02-28T00:26:41+09:00 [INFO] Fetch all open issues and pull requests from k1LoW/myrepo
 2021-02-28T00:26:42+09:00 [INFO] 3 issues and pull requests are fetched
 2021-02-28T00:26:42+09:00 [INFO] 1 tasks are loaded
 2021-02-28T00:26:42+09:00 [INFO] [#14 << set-question-label] [DO] Set labels: question
@@ -85,6 +85,13 @@ $ git push origin
 ```
 
 And, see `https://github.com/[owner]/[repo]/actions`
+
+| Event that trigger workflows | Issues and pull requests fetched by `ghdag` |
+| --- | --- |
+| `issues` | A **single** issue that triggered the event |
+| `issue_comment` | A **single** issue or pull request that triggered the event |
+| `pull_request` `pull_request_*` | A **single** pull request that triggered the event |
+| Other events | **All** opened issues and pull requests |
 
 ## Workflow syntax
 
