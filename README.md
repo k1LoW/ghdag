@@ -277,3 +277,9 @@ Download binary from [releases page](https://github.com/k1LoW/ghdag/releases)
 ```console
 $ go get github.com/k1LoW/ghdag
 ```
+
+**docker:**
+
+```console
+$ docker pull ghcr.io/k1low/ghdag:latest
+```
