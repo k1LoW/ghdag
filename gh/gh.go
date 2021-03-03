@@ -253,6 +253,9 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	} else {
 		// Pull request
 		p := q.Repogitory.IssueOrPullRequest.PullRequest
+		if bool(p.IsDraft) {
+			return nil, fmt.Errorf("pull request #%d is draft", int(p.Number))
+		}
 		return buildTargetFromPullRequest(p, now)
 	}
 }
