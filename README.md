@@ -46,7 +46,30 @@ $
 
 ### Run workflow on GitHub Actions
 
-:construction:
+``` yaml
+name: ghdag workflow
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened]
+
+jobs:
+  run-ghdag:
+    name: Run ghdag
+    runs-on: ubuntu-latest
+    container: ghcr.io/k1low/ghdag:latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run ghdag
+        run: ghdag run myworkflow.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
 
 ## Workflow syntax
 
