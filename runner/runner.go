@@ -378,7 +378,7 @@ func (r *Runner) sampleByEnv(in []string, envKey string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(in) < sn {
+	if len(in) > sn {
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
 		in = in[:sn]
