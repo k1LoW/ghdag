@@ -102,7 +102,8 @@ tasks:
 				_ = file.Close()
 			}()
 
-			ts := `
+			ts := `---
+# generate by ghdag init
 name: ghdag workflow
 on:
   issues:

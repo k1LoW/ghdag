@@ -6,11 +6,13 @@
 
 ### Generate a workflow file
 
+Execute `ghdag init` for generating a workflow YAML file for `ghdag` ( and a workflow YAML file for GitHub Actions ).
+
 ``` console
 $ ghdag init myworkflow
 2021-02-23T23:29:48+09:00 [INFO] ghdag version 0.2.3
 2021-02-23T23:29:48+09:00 [INFO] Creating myworkflow.yml
-Do you generate a workflow YAML file for GitHub Actions? (y/n) [y]:
+Do you generate a workflow YAML file for GitHub Actions? (y/n) [y]: y
 2021-02-23T23:29:48+09:00 [INFO] Creating .github/workflows/ghdag_workflow.yml
 $ cat myworkflow.yml
 ---
@@ -26,34 +28,9 @@ tasks:
     ng:
       run: echo 'failed'
     name: Set 'question' label
-```
-
-And edit myworkflow.yml.
-
-### Run workflow on your machine
-
-``` console
-$ export GITHUB_TOKEN=xxXxXXxxXXxx
-$ export GITHUB_REPOGITORY=k1LoW/myrepo
-$ ghdag run myworkflow.yml
-2021-02-28T00:26:41+09:00 [INFO] ghdag version 0.2.3
-2021-02-28T00:26:41+09:00 [INFO] Start session
-2021-02-28T00:26:41+09:00 [INFO] Fetch open issues and pull requests from k1LoW/myrepo
-2021-02-28T00:26:42+09:00 [INFO] 3 issues and pull requests are fetched
-2021-02-28T00:26:42+09:00 [INFO] 1 tasks are loaded
-2021-02-28T00:26:42+09:00 [INFO] [#14 << set-question-label] [DO] Set labels: question
-Set labels
-2021-02-28T00:26:43+09:00 [INFO] Session finished
-$
-```
-
-### Run workflow on GitHub Actions
-
-``` console
 $ cat .github/workflows/ghdag_workflow.yml
-```
-
-``` yaml
+---
+# generate by ghdag init
 name: ghdag workflow
 on:
   issues:
@@ -78,6 +55,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+And edit myworkflow.yml.
+
+### Run workflow on your machine
+
+``` console
+$ export GITHUB_TOKEN=xxXxXXxxXXxx
+$ export GITHUB_REPOGITORY=k1LoW/myrepo
+$ ghdag run myworkflow.yml
+2021-02-28T00:26:41+09:00 [INFO] ghdag version 0.2.3
+2021-02-28T00:26:41+09:00 [INFO] Start session
+2021-02-28T00:26:41+09:00 [INFO] Fetch open issues and pull requests from k1LoW/myrepo
+2021-02-28T00:26:42+09:00 [INFO] 3 issues and pull requests are fetched
+2021-02-28T00:26:42+09:00 [INFO] 1 tasks are loaded
+2021-02-28T00:26:42+09:00 [INFO] [#14 << set-question-label] [DO] Set labels: question
+Set labels
+2021-02-28T00:26:43+09:00 [INFO] Session finished
+$
+```
+
+### Run workflow on GitHub Actions
+
+``` console
+$ git add myworkflow.yml
+$ git add .github/workflows/ghdag_workflow.yml
+$ git commit -m'Initial commit for ghdag workflow'
+$ git push origin
+```
+
+And, see `https://github.com/[owner]/[repo]/actions`
 
 ## Workflow syntax
 
