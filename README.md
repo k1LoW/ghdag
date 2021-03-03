@@ -57,12 +57,13 @@ on:
     types: [opened]
 
 jobs:
-  run-ghdag:
-    name: Run ghdag
+  run-workflow:
+    name: Run workflow
     runs-on: ubuntu-latest
     container: ghcr.io/k1low/ghdag:latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run ghdag
