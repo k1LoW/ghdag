@@ -14,3 +14,18 @@ func NewAlreadyInStateError(err error) AlreadyInStateError {
 		err: err,
 	}
 }
+
+type NotOpenError struct {
+	err error
+}
+
+func (e NotOpenError) Error() string {
+	return e.err.Error()
+}
+
+// NewNotOpenError ...
+func NewNotOpenError(err error) NotOpenError {
+	return NotOpenError{
+		err: err,
+	}
+}

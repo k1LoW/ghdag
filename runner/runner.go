@@ -2,10 +2,13 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -55,6 +58,8 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.log("Start session")
 	defer func() {
 		_ = r.revertEnv()
+		r.logPrefix = ""
+		r.log("Session finished")
 	}()
 	if err := r.config.Env.Setenv(); err != nil {
 		return err
@@ -70,13 +75,16 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	r.slack = sc
 
-	r.log(fmt.Sprintf("Fetch open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
-	targets, err := r.github.FetchTargets(ctx)
+	targets, err := r.fetchTargets(ctx)
+	maxDigits := targets.MaxDigits()
+	r.log(fmt.Sprintf("%d issues and pull requests are fetched", len(targets)))
+	if errors.As(err, &erro.NotOpenError{}) {
+		r.log(fmt.Sprintf("[SKIP] %s", err))
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	maxDigits := targets.MaxDigits()
-	r.log(fmt.Sprintf("%d issues and pull requests are fetched", len(targets)))
 	tasks := r.config.Tasks
 	r.log(fmt.Sprintf("%d tasks are loaded", len(tasks)))
 	maxLength := tasks.MaxLengthID()
@@ -172,6 +180,10 @@ func (r *Runner) Run(ctx context.Context) error {
 				// Update target
 				target, err := r.github.FetchTarget(ctx, tq.target.Number)
 				if err != nil {
+					if errors.As(err, &erro.NotOpenError{}) {
+						r.log(fmt.Sprintf("[SKIP] %s", err))
+						return nil
+					}
 					return err
 				}
 				tq.target = target
@@ -213,9 +225,6 @@ func (r *Runner) Run(ctx context.Context) error {
 			return err
 		}
 	}
-
-	r.logPrefix = ""
-	r.log("Session finished")
 	return nil
 }
 
@@ -338,6 +347,28 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	return nil
 }
 
+func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
+	en := os.Getenv("GITHUB_EVENT_NAME")
+	ep := os.Getenv("GITHUB_EVENT_PATH")
+	if strings.HasPrefix(en, "issue") || strings.HasPrefix(en, "pull_request") {
+		n, state, err := detectTargetNumber(ep)
+		if err != nil {
+			return nil, err
+		}
+		if state != "open" {
+			return nil, erro.NewNotOpenError(fmt.Errorf("#%d is not opened: %s", n, state))
+		}
+		r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
+		t, err := r.github.FetchTarget(ctx, n)
+		if err != nil {
+			return nil, err
+		}
+		return target.Targets{n: t}, nil
+	}
+	r.log(fmt.Sprintf("Fetch all open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTargets(ctx)
+}
+
 func (r *Runner) log(m string) {
 	log.Info().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
 }
@@ -352,6 +383,33 @@ func (r *Runner) debuglog(m string) {
 
 func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
+}
+
+func detectTargetNumber(p string) (int, string, error) {
+	b, err := ioutil.ReadFile(filepath.Clean(p))
+	if err != nil {
+		return 0, "", err
+	}
+	s := struct {
+		PullRequest struct {
+			Number int    `json:"number,omitempty"`
+			State  string `json:"state,omitempty"`
+		} `json:"pull_request,omitempty"`
+		Issue struct {
+			Number int    `json:"number,omitempty"`
+			State  string `json:"state,omitempty"`
+		} `json:"issue,omitempty"`
+	}{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return 0, "", err
+	}
+	switch {
+	case s.PullRequest.Number > 0:
+		return s.PullRequest.Number, s.PullRequest.State, nil
+	case s.Issue.Number > 0:
+		return s.Issue.Number, s.Issue.State, nil
+	}
+	return 0, "", fmt.Errorf("can not parse: %s", p)
 }
 
 func sampleByEnv(in []string, envKey string) ([]string, error) {
