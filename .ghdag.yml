@@ -1,0 +1,12 @@
+---
+tasks:
+  -
+    id: set-assignees
+    if: 'author == "k1LoW"'
+    do:
+      assignees: [k1LoW]
+    ok:
+      run: echo 'Set assignees'
+    ng:
+      run: echo 'Failed'
+    name: Set assignees
