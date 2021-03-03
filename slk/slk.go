@@ -137,7 +137,7 @@ func (c *Client) getMentionLinkByName(ctx context.Context, name string) (string,
 	}
 	if gc, ok := c.userGroupCache[name]; ok {
 		// https://api.slack.com/reference/surfaces/formatting#mentioning-groups
-		return fmt.Sprintf("<!!subteam^%s>", gc.ID), nil
+		return fmt.Sprintf("<!subteam^%s>", gc.ID), nil
 	}
 
 	users, err := c.client.GetUsersContext(ctx)
@@ -162,7 +162,7 @@ func (c *Client) getMentionLinkByName(ctx context.Context, name string) (string,
 	}
 	gc, ok := c.userGroupCache[name]
 	if ok {
-		return fmt.Sprintf("<!!subteam^%s>", gc.ID), nil
+		return fmt.Sprintf("<!subteam^%s>", gc.ID), nil
 	}
 
 	return "", fmt.Errorf("not found user or usergroup: %s", name)

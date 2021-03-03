@@ -1,3 +1,7 @@
+## [v0.2.0](https://github.com/k1LoW/ghdag/compare/v0.1.1...v0.2.0) (2021-03-03)
+
+* Detect issue or pull request number using GITHUB_EVENT_PATH [#17](https://github.com/k1LoW/ghdag/pull/17) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.1.1](https://github.com/k1LoW/ghdag/compare/v0.1.0...v0.1.1) (2021-03-02)
 
 * Fix GHDAG_TARGET_* environment variables are not set [#16](https://github.com/k1LoW/ghdag/pull/16) ([k1LoW](https://github.com/k1LoW))
