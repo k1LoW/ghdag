@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/Songmu/prompter"
 	"github.com/k1LoW/ghdag/version"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -40,7 +41,8 @@ var initCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Info().Msg(fmt.Sprintf("%s version %s", version.Name, version.Version))
-		path := fmt.Sprintf("%s.yml", args[0])
+		n := args[0]
+		path := fmt.Sprintf("%s.yml", n)
 		log.Info().Msg(fmt.Sprintf("Creating %s", path))
 		if _, err := os.Lstat(path); err == nil {
 			return fmt.Errorf("%s already exist", path)
@@ -54,9 +56,10 @@ var initCmd = &cobra.Command{
 		}()
 
 		ts := `---
+# generate by ghdag init
 tasks:
   -
-    id: sample-task
+    id: set-question-label
     if: 'is_issue && len(labels) == 0 && title endsWith "?"'
     do:
       labels: [question]
@@ -70,6 +73,67 @@ tasks:
 		tmplData := map[string]interface{}{}
 		if err := tmpl.Execute(file, tmplData); err != nil {
 			return err
+		}
+		yn := prompter.YN("Do you generate a workflow YAML file for GitHub Actions?", true)
+		if !yn {
+			return nil
+		}
+		{
+			dir := filepath.Join(".github", "workflows")
+			if _, err := os.Lstat(dir); err != nil {
+				yn := prompter.YN(fmt.Sprintf("%s does not exist. Do you create it?", dir), true)
+				if !yn {
+					return nil
+				}
+				if err := os.MkdirAll(dir, 0755); err != nil { // #nosec
+					return err
+				}
+			}
+			path := filepath.Join(dir, "ghdag_workflow.yml")
+			log.Info().Msg(fmt.Sprintf("Creating %s", path))
+			if _, err := os.Lstat(path); err == nil {
+				return fmt.Errorf("%s already exist", path)
+			}
+			file, err := os.Create(filepath.Clean(path))
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			ts := `
+name: ghdag workflow
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened]
+
+jobs:
+  run-workflow:
+    name: Run workflow
+    runs-on: ubuntu-latest
+    container: ghcr.io/k1low/ghdag:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: {{ "${{ secrets.GITHUB_TOKEN }}" }}
+      - name: Run ghdag
+        run: ghdag run {{ .Name }}.yml
+        env:
+          GITHUB_TOKEN: {{ "${{ secrets.GITHUB_TOKEN }}" }}
+`
+			tmpl := template.Must(template.New("workflow").Parse(ts))
+			tmplData := map[string]interface{}{
+				"Name": n,
+			}
+			if err := tmpl.Execute(file, tmplData); err != nil {
+				return err
+			}
 		}
 		return nil
 	},
