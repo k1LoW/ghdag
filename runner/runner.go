@@ -373,7 +373,7 @@ func (r *Runner) sampleByEnv(in []string, envKey string) ([]string, error) {
 	if os.Getenv(envKey) == "" {
 		return in, nil
 	}
-	r.debuglog(fmt.Sprintf("env %s is not set for sampling: %s", envKey))
+	r.debuglog(fmt.Sprintf("env %s is not set for sampling", envKey))
 	sn, err := strconv.Atoi(os.Getenv(envKey))
 	if err != nil {
 		return nil, err
