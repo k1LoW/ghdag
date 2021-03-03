@@ -193,7 +193,7 @@ A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to 
 | --- | --- |
 | `GHDAG_TASK_ID` | Task ID |
 | `GHDAG_ACTION_OK_ERROR` | Error message when `ok:` action failed |
-| `GHDAG_TASK_*` | Variables available in the `if:` section. ( ex. `number` -> `GHDAG_TASK_NUMBER` ) |
+| `GHDAG_TASK_*` | [Variables available in the `if:` section](https://github.com/k1LoW/ghdag#available-variables). ( ex. `number` -> `GHDAG_TASK_NUMBER` ) |
 
 #### `tasks[*].<action_type>.run:`
 
