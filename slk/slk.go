@@ -4,11 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/slack-go/slack"
 )
@@ -185,20 +182,4 @@ func buildBlocks(m string) []slack.Block {
 		slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", m, false, false), nil, nil),
 		contextBlock,
 	}
-}
-
-func sampleByEnv(in []string, envKey string) ([]string, error) {
-	if os.Getenv(envKey) == "" {
-		return in, nil
-	}
-	sn, err := strconv.Atoi(os.Getenv(envKey))
-	if err != nil {
-		return nil, err
-	}
-	if len(in) < sn {
-		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
-		in = in[:sn]
-	}
-	return in, nil
 }

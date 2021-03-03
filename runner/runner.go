@@ -257,7 +257,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 			return err
 		}
 		sortStringSlice(i.Assignees)
-		as, err = sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
+		as, err = r.sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
 		if err != nil {
 			return err
 		}
@@ -268,7 +268,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		}
 		return r.github.SetAssignees(ctx, i.Number, as)
 	case len(a.Reviewers) > 0:
-		reviewers, err := sampleByEnv(a.Reviewers, "GITHUB_REVIEWERS_SAMPLE")
+		reviewers, err := r.sampleByEnv(a.Reviewers, "GITHUB_REVIEWERS_SAMPLE")
 		if err != nil {
 			return err
 		}
@@ -324,7 +324,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 			return err
 		}
 		mentions := strings.Split(os.Getenv("SLACK_MENTIONS"), " ")
-		mentions, err = sampleByEnv(mentions, "SLACK_MENTIONS_SAMPLE")
+		mentions, err = r.sampleByEnv(mentions, "SLACK_MENTIONS_SAMPLE")
 		if err != nil {
 			return err
 		}
@@ -369,6 +369,23 @@ func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 	return r.github.FetchTargets(ctx)
 }
 
+func (r *Runner) sampleByEnv(in []string, envKey string) ([]string, error) {
+	if os.Getenv(envKey) == "" {
+		return in, nil
+	}
+	r.debuglog(fmt.Sprintf("found environment variable for sampling: %s", envKey))
+	sn, err := strconv.Atoi(os.Getenv(envKey))
+	if err != nil {
+		return nil, err
+	}
+	if len(in) < sn {
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
+		in = in[:sn]
+	}
+	return in, nil
+}
+
 func (r *Runner) log(m string) {
 	log.Info().Msg(fmt.Sprintf("%s%s", r.logPrefix, m))
 }
@@ -410,22 +427,6 @@ func detectTargetNumber(p string) (int, string, error) {
 		return s.Issue.Number, s.Issue.State, nil
 	}
 	return 0, "", fmt.Errorf("can not parse: %s", p)
-}
-
-func sampleByEnv(in []string, envKey string) ([]string, error) {
-	if os.Getenv(envKey) == "" {
-		return in, nil
-	}
-	sn, err := strconv.Atoi(os.Getenv(envKey))
-	if err != nil {
-		return nil, err
-	}
-	if len(in) < sn {
-		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
-		in = in[:sn]
-	}
-	return in, nil
 }
 
 func contains(s []string, e string) bool {
