@@ -1,3 +1,7 @@
+## [v0.2.1](https://github.com/k1LoW/ghdag/compare/v0.2.0...v0.2.1) (2021-03-03)
+
+* Fix mention [#18](https://github.com/k1LoW/ghdag/pull/18) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.2.0](https://github.com/k1LoW/ghdag/compare/v0.1.1...v0.2.0) (2021-03-03)
 
 * Detect issue or pull request number using GITHUB_EVENT_PATH [#17](https://github.com/k1LoW/ghdag/pull/17) ([k1LoW](https://github.com/k1LoW))
