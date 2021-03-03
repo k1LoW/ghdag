@@ -89,7 +89,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.log(fmt.Sprintf("%d tasks are loaded", len(tasks)))
 	maxLength := tasks.MaxLengthID()
 
-	q := make(chan TaskQueue, len(tasks)*len(targets))
+	q := make(chan TaskQueue, len(tasks)*len(targets)+100)
 	for _, i := range targets {
 		for _, t := range tasks {
 			q <- TaskQueue{
