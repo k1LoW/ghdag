@@ -3,6 +3,7 @@ module github.com/k1LoW/ghdag
 go 1.15
 
 require (
+	github.com/Songmu/prompter v0.4.0
 	github.com/antonmedv/expr v1.8.9
 	github.com/goccy/go-json v0.4.7
 	github.com/goccy/go-yaml v1.8.8
