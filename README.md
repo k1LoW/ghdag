@@ -8,20 +8,23 @@
 
 ``` console
 $ ghdag init myworkflow
-2021-02-23T23:29:48+09:00 [INFO] ghdag version 0.0.1
+2021-02-23T23:29:48+09:00 [INFO] ghdag version 0.2.3
 2021-02-23T23:29:48+09:00 [INFO] Creating myworkflow.yml
+Do you generate a workflow YAML file for GitHub Actions? (y/n) [y]:
+2021-02-23T23:29:48+09:00 [INFO] Creating .github/workflows/ghdag_workflow.yml
 $ cat myworkflow.yml
 ---
+# generate by ghdag init
 tasks:
   -
-    id: sample-task
+    id: set-question-label
     if: 'is_issue && len(labels) == 0 && title endsWith "?"'
     do:
-      comment: 'Good :+1:'
+      labels: [question]
     ok:
-      run: echo 'commented'
+      run: echo 'Set labels'
     ng:
-      run: echo 'fail comment'
+      run: echo 'failed'
     name: Set 'question' label
 ```
 
@@ -33,7 +36,7 @@ And edit myworkflow.yml.
 $ export GITHUB_TOKEN=xxXxXXxxXXxx
 $ export GITHUB_REPOGITORY=k1LoW/myrepo
 $ ghdag run myworkflow.yml
-2021-02-28T00:26:41+09:00 [INFO] ghdag version 0.0.1
+2021-02-28T00:26:41+09:00 [INFO] ghdag version 0.2.3
 2021-02-28T00:26:41+09:00 [INFO] Start session
 2021-02-28T00:26:41+09:00 [INFO] Fetch open issues and pull requests from k1LoW/myrepo
 2021-02-28T00:26:42+09:00 [INFO] 3 issues and pull requests are fetched
@@ -45,6 +48,10 @@ $
 ```
 
 ### Run workflow on GitHub Actions
+
+``` console
+$ cat .github/workflows/ghdag_workflow.yml
+```
 
 ``` yaml
 name: ghdag workflow
