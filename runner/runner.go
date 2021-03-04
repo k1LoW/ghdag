@@ -1,10 +1,12 @@
 package runner
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -239,9 +241,19 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	case a.Run != "":
 		c := exec.CommandContext(ctx, "sh", "-c", a.Run)
 		c.Env = os.Environ()
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
+		outbuf := new(bytes.Buffer)
+		outmr := io.MultiWriter(os.Stdout, outbuf)
+		c.Stdout = outmr
+		errbuf := new(bytes.Buffer)
+		errmr := io.MultiWriter(os.Stderr, errbuf)
+		c.Stderr = errmr
 		if err := c.Run(); err != nil {
+			return err
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_STDOUT", outbuf.String()); err != nil {
+			return err
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_STDERR", errbuf.String()); err != nil {
 			return err
 		}
 		return nil
