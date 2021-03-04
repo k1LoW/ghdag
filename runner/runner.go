@@ -52,9 +52,10 @@ func New(c *config.Config) (*Runner, error) {
 }
 
 type TaskQueue struct {
-	target *target.Target
-	task   *task.Task
-	called bool
+	target     *target.Target
+	task       *task.Task
+	called     bool
+	callerSeed int64
 }
 
 func (r *Runner) Run(ctx context.Context) error {
@@ -191,6 +192,9 @@ func (r *Runner) Run(ctx context.Context) error {
 					return err
 				}
 				tq.target = target
+
+				// Set caller seed
+				r.seed = tq.callerSeed
 			}
 
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
@@ -352,9 +356,10 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 				return err
 			}
 			q <- TaskQueue{
-				target: i,
-				task:   t,
-				called: true,
+				target:     i,
+				task:       t,
+				called:     true,
+				callerSeed: r.seed,
 			}
 		}
 	}
