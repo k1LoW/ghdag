@@ -250,8 +250,12 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		if err := c.Run(); err != nil {
 			return err
 		}
-		os.Setenv("GHDAG_ACTION_RUN_STDOUT", outbuf.String())
-		os.Setenv("GHDAG_ACTION_RUN_STDERR", errbuf.String())
+		if err := os.Setenv("GHDAG_ACTION_RUN_STDOUT", outbuf.String()); err != nil {
+			return err
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_STDERR", errbuf.String()); err != nil {
+			return err
+		}
 		return nil
 	case len(a.Labels) > 0:
 		sortStringSlice(i.Labels)
