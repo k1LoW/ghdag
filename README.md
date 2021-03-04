@@ -211,13 +211,36 @@ A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to 
 
 Execute command using `sh -c`.
 
+**Example**
+
+``` yaml
+do:
+  run: echo 'execute command'
+```
+
 #### `tasks[*].<action_type>.labels:`
 
 Update the labels of the target issue or pull request.
 
+**Example**
+
+``` yaml
+do:
+  labels: [question, bug]
+```
+
 #### `tasks[*].<action_type>.assignees:`
 
 Update the assignees of the target issue or pull request.
+
+**Example**
+
+``` yaml
+do:
+  assignees: [alice, bob, charlie]
+env:
+  GITHUB_ASSIGNEES_SAMPLE: 1
+```
 
 #### `tasks[*].<action_type>.reviewers:`
 
@@ -225,13 +248,41 @@ Update the reviewers for the target pull request.
 
 However, [Code owners](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners) has already been registered as a reviewer, so it is excluded.
 
+**Example**
+
+``` yaml
+do:
+  reviewers: [alice, bob, charlie]
+env:
+  GITHUB_REVIEWERS_SAMPLE: 2
+```
+
 #### `tasks[*].<action_type>.comment:`
 
 Add new comment to the target issue or pull request.
 
+**Example**
+
+``` yaml
+do:
+  labels: [question]
+ok:
+  comment: Thank you for your question :+1:
+```
+
 #### `tasks[*].<action_type>.state:`
 
 Change state the the target issue or pull request.
+
+**Example**
+
+``` yaml
+if: hours_elapsed_since_updated > (24 * 30)
+do:
+  state: close
+```
+
+##### Changeable states
 
 | Target | Changeable states |
 | --- | --- |
@@ -242,6 +293,16 @@ Change state the the target issue or pull request.
 
 Send notify message to Slack channel.
 
+**Example**
+
+``` yaml
+ng:
+  notify: error ${GHDAG_ACTION_OK_ERROR}
+env:
+  SLACK_CHANNEL: workflow-alerts
+  SLACK_MENTIONS: [bob]
+```
+
 ##### Required environment variables
 
 - ( `SLACK_API_TOKEN` and `SLACK_CHANNEL` ) or `SLACK_WEBHOOK_URL`
@@ -249,6 +310,28 @@ Send notify message to Slack channel.
 #### `tasks[*].<action_type>.next:`
 
 Call next tasks in the same session.
+
+**Example**
+
+``` yaml
+``` yaml
+tasks:
+  -
+    id: set-question-label
+    if: 'is_issue && len(labels) == 0 && title endsWith "?"'
+    do:
+      labels: [question]
+    ok:
+      next [notify-slack, add-comment]
+  -
+    id: notify-slack
+    do:
+      notify: A question has been posted.
+  -
+    id: add-comment
+    do:
+      comment: Thank you your comment !!!
+```
 
 ## Environment variables for configuration
 
