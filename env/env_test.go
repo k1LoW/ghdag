@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestMain(m *testing.M) {
@@ -68,6 +70,31 @@ func TestSetenv(t *testing.T) {
 			if got != v {
 				t.Errorf("got %v\nwant %v", got, v)
 			}
+		}
+	}
+}
+
+func TestToSlice(t *testing.T) {
+	tests := []struct {
+		in   string
+		want []string
+	}{
+		{"bug", []string{"bug"}},
+		{"bug question", []string{"bug", "question"}},
+		{"bug  question", []string{"bug", "question"}},
+		{"bug,question", []string{"bug", "question"}},
+		{"bug, question", []string{"bug", "question"}},
+		{"bug,  question", []string{"bug", "question"}},
+		{`bug "help wanted"`, []string{"bug", "help wanted"}},
+		{`bug 'help wanted'`, []string{"bug", "help wanted"}},
+	}
+	for _, tt := range tests {
+		got, err := ToSlice(tt.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(got, tt.want, nil); diff != "" {
+			t.Errorf("%s", diff)
 		}
 	}
 }
