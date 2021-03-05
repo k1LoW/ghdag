@@ -347,7 +347,10 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		if err != nil {
 			return err
 		}
-		mentions := strings.Split(os.Getenv("SLACK_MENTIONS"), " ")
+		mentions, err := env.ToSlice(os.Getenv("SLACK_MENTIONS"))
+		if err != nil {
+			return err
+		}
 		mentions, err = r.sampleByEnv(mentions, "SLACK_MENTIONS_SAMPLE")
 		if err != nil {
 			return err

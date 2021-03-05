@@ -2,6 +2,7 @@ package env
 
 import (
 	"bytes"
+	"encoding/csv"
 	"os"
 	"regexp"
 	"strings"
@@ -79,4 +80,28 @@ func EnvMap() map[string]string {
 		m[k] = parts[1]
 	}
 	return m
+}
+
+func ToSlice(in string) ([]string, error) {
+	sq := strings.Count(in, "'")
+	if sq > 0 && (sq%2 == 0) {
+		in = strings.Replace(in, `'`, `"`, -1)
+	}
+	r := csv.NewReader(strings.NewReader(in))
+	if !strings.Contains(in, ",") {
+		r.Comma = ' '
+	}
+	c, err := r.Read()
+	if err != nil {
+		return nil, err
+	}
+	res := []string{}
+	for _, s := range c {
+		trimed := strings.Trim(s, " ")
+		if trimed == "" {
+			continue
+		}
+		res = append(res, trimed)
+	}
+	return res, nil
 }
