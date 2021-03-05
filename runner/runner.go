@@ -55,6 +55,7 @@ type TaskQueue struct {
 	target     *target.Target
 	task       *task.Task
 	called     bool
+	callerTask *task.Task
 	callerSeed int64
 }
 
@@ -192,6 +193,9 @@ func (r *Runner) Run(ctx context.Context) error {
 					return err
 				}
 				tq.target = target
+
+				// Set task id of caller
+				os.Setenv("GHDAG_CALLER_TASK_ID", tq.callerTask.Id)
 
 				// Set caller seed
 				r.seed = tq.callerSeed
@@ -351,14 +355,15 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	case len(a.Next) > 0:
 		r.log(fmt.Sprintf("Call next task: %s", strings.Join(a.Next, ", ")))
 		for _, id := range a.Next {
-			t, err := r.config.Tasks.Find(id)
+			nt, err := r.config.Tasks.Find(id)
 			if err != nil {
 				return err
 			}
 			q <- TaskQueue{
 				target:     i,
-				task:       t,
+				task:       nt,
 				called:     true,
+				callerTask: t,
 				callerSeed: r.seed,
 			}
 		}
