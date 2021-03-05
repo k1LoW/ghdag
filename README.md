@@ -352,6 +352,9 @@ tasks:
 | `SLACK_MENTIONS` | Mentions to be given to notifications | - |
 | `SLACK_MENTIONS_SAMPLE` | Number of users to randomly select from those listed in `SLACK_MENTIONS`. | - |
 | `GHDAG_SAMPLE_WITH_SAME_SEED` | Sample using the same random seed as the previous action/task or not. | - |
+| `SLACK_USERNAME` | Custom `username` of slack message. Require `chat:write.customize` scope. | |
+| `SLACK_ICON_EMOJI` | Custom `icon_emoji` of slack message. Require `chat:write.customize` scope. | |
+| `SLACK_ICON_URL` | Custom `icon_url` of slack message. Require `chat:write.customize` scope. | |
 
 #### Required scope of `SLACK_API_TOKEN`
 
@@ -360,6 +363,7 @@ tasks:
 - `chat:write.public`
 - `users:read`
 - `usergroups:read`
+- `chat:write.customize` ( optional )
 
 ## Install
 
