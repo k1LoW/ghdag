@@ -71,7 +71,23 @@ func (c *Client) postMessage(ctx context.Context, m string, mentions []string) e
 		m = fmt.Sprintf("%s %s", strings.Join(links, " "), m)
 	}
 
-	if _, _, err := c.client.PostMessageContext(ctx, channelID, slack.MsgOptionBlocks(buildBlocks(m)...)); err != nil {
+	opts := []slack.MsgOption{
+		slack.MsgOptionBlocks(buildBlocks(m)...),
+	}
+
+	if username := os.Getenv("SLACK_USERNAME"); username != "" {
+		opts = append(opts, slack.MsgOptionUsername(username))
+	}
+
+	if emoji := os.Getenv("SLACK_ICON_EMOJI"); emoji != "" {
+		opts = append(opts, slack.MsgOptionIconEmoji(emoji))
+	}
+
+	if url := os.Getenv("SLACK_ICON_URL"); url != "" {
+		opts = append(opts, slack.MsgOptionIconURL(url))
+	}
+
+	if _, _, err := c.client.PostMessageContext(ctx, channelID, opts...); err != nil {
 		return err
 	}
 	return nil
