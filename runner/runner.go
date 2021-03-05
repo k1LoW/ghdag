@@ -195,7 +195,9 @@ func (r *Runner) Run(ctx context.Context) error {
 				tq.target = target
 
 				// Set task id of caller
-				os.Setenv("GHDAG_CALLER_TASK_ID", tq.callerTask.Id)
+				if err := os.Setenv("GHDAG_CALLER_TASK_ID", tq.callerTask.Id); err != nil {
+					return err
+				}
 
 				// Set caller seed
 				r.seed = tq.callerSeed
