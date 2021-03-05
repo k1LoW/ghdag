@@ -1,3 +1,12 @@
+## [v0.4.0](https://github.com/k1LoW/ghdag/compare/v0.3.0...v0.4.0) (2021-03-05)
+
+* Update Dockerfile [#29](https://github.com/k1LoW/ghdag/pull/29) ([k1LoW](https://github.com/k1LoW))
+* Support custom usernme, icon_emoji, icon_url [#28](https://github.com/k1LoW/ghdag/pull/28) ([k1LoW](https://github.com/k1LoW))
+* Set environment variable `GHDAG_CALLER_TASK_ID` [#27](https://github.com/k1LoW/ghdag/pull/27) ([k1LoW](https://github.com/k1LoW))
+* Ensure that `GHDAG_SAMPLE_WITH_SAME_SEED` is also effective between caller task and callee task [#26](https://github.com/k1LoW/ghdag/pull/26) ([k1LoW](https://github.com/k1LoW))
+* Fix GHDAG_ACTION_OK_ERROR -> GHDAG_ACTION_DO_ERROR [#25](https://github.com/k1LoW/ghdag/pull/25) ([k1LoW](https://github.com/k1LoW))
+* Set STDOUT/STDERR of run action to environment variables [#24](https://github.com/k1LoW/ghdag/pull/24) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.3.0](https://github.com/k1LoW/ghdag/compare/v0.2.3...v0.3.0) (2021-03-04)
 
 * Add an environment variable `GHDAG_SAMPLE_WITH_SAME_SEED` for sampling using the same seed as in the previous task. [#23](https://github.com/k1LoW/ghdag/pull/23) ([k1LoW](https://github.com/k1LoW))
