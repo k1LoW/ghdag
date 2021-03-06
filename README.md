@@ -383,6 +383,15 @@ $ export GHDAG_VERSION=X.X.X
 $ yum install https://github.com/k1LoW/ghdag/releases/download/v$GHDAG_VERSION/ghdag_$GHDAG_VERSION-1_amd64.rpm
 ```
 
+**apk:**
+
+Use [apk-add-from-url](https://github.com/k1LoW/apk-add-from-url)
+
+``` console
+$ export GHDAG_VERSION=X.X.X
+$ curl -L https://git.io/apk-add-from-url | sh -s -- https://github.com/k1LoW/ghdag/releases/download/v$GHDAG_VERSION/ghdag_$GHDAG_VERSION-1_amd64.apk
+```
+
 **homebrew tap:**
 
 ```console
