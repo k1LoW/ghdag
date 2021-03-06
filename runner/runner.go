@@ -207,7 +207,7 @@ func (r *Runner) Run(ctx context.Context) error {
 			if err := r.perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
-					if errors.As(err, &erro.AlreadyInStateError{}) {
+					if errors.As(err, &erro.AlreadyInStateError{}) || errors.As(err, &erro.NoReviewerError{}) {
 						r.log(fmt.Sprintf("[SKIP] %s", err))
 						return nil
 					}
@@ -215,7 +215,7 @@ func (r *Runner) Run(ctx context.Context) error {
 					return nil
 				}
 			} else {
-				if errors.As(err, &erro.AlreadyInStateError{}) {
+				if errors.As(err, &erro.AlreadyInStateError{}) || errors.As(err, &erro.NoReviewerError{}) {
 					r.log(fmt.Sprintf("[SKIP] %s", err))
 					return nil
 				}
@@ -225,7 +225,7 @@ func (r *Runner) Run(ctx context.Context) error {
 				}
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [NG] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ng, tq.target, tq.task, q); err != nil {
-					if errors.As(err, &erro.AlreadyInStateError{}) {
+					if errors.As(err, &erro.AlreadyInStateError{}) || errors.As(err, &erro.NoReviewerError{}) {
 						r.log(fmt.Sprintf("[SKIP] %s", err))
 						return nil
 					}
@@ -292,9 +292,17 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		}
 		return r.github.SetAssignees(ctx, i.Number, as)
 	case len(a.Reviewers) > 0:
-		reviewers, err := r.sampleByEnv(a.Reviewers, "GITHUB_REVIEWERS_SAMPLE")
+		reviewers := []string{}
+		if contains(a.Reviewers, i.Author) {
+			r.debuglog(fmt.Sprintf("Exclude author from reviewers: %s", a.Reviewers))
+			reviewers = exclude(a.Reviewers, i.Author)
+		}
+		reviewers, err := r.sampleByEnv(reviewers, "GITHUB_REVIEWERS_SAMPLE")
 		if err != nil {
 			return err
+		}
+		if len(reviewers) == 0 {
+			return erro.NewNoReviewerError(errors.New("no reviewers to assign"))
 		}
 
 		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(reviewers, ", ")))
@@ -471,6 +479,17 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+func exclude(s []string, e string) []string {
+	o := []string{}
+	for _, v := range s {
+		if v == e {
+			continue
+		}
+		o = append(o, v)
+	}
+	return o
 }
 
 func sortStringSlice(in []string) {

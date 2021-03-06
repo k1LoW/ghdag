@@ -29,3 +29,18 @@ func NewNotOpenError(err error) NotOpenError {
 		err: err,
 	}
 }
+
+type NoReviewerError struct {
+	err error
+}
+
+func (e NoReviewerError) Error() string {
+	return e.err.Error()
+}
+
+// NewNoReviewerError ...
+func NewNoReviewerError(err error) NoReviewerError {
+	return NoReviewerError{
+		err: err,
+	}
+}
