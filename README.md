@@ -10,6 +10,8 @@ Key features of `ghdag` are:
 - Built-in GitHub and Slack actions.
 - Optimized for running on GitHub Actions, it is easier to configure when running on GitHub Actions.
 
+See **[Examples](examples.md)** page for practical usage.
+
 ## Getting Started
 
 ### Generate a workflow file
