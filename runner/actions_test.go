@@ -206,11 +206,64 @@ func TestPerformReviewersAction(t *testing.T) {
 		}
 		if tt.wantErr == nil {
 			m.EXPECT().SetReviewers(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
-			if err := r.PerformReviewersAction(ctx, i, tt.in); err != nil {
-				t.Error(err)
+		}
+		if err := r.PerformReviewersAction(ctx, i, tt.in); err != nil {
+			if !errors.As(err, tt.wantErr) {
+				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
-		} else {
-			if err := r.PerformReviewersAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
+		}
+	}
+}
+
+func TestPerformCommentAction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	m := mock.NewMockGitHubClient(ctrl)
+	r.github = m
+
+	tests := []struct {
+		in           string
+		sig          string
+		mentionsEnv  string
+		current      string
+		want         string
+		wantMentions []string
+		wantErr      interface{}
+	}{
+		{"hello", "<!-- ghdag:test:sig -->", "", "", "hello\n<!-- ghdag:test:sig -->\n", []string{}, nil},
+		{"hello", "<!-- ghdag:test:sig -->", "alice @bob", "", "hello\n<!-- ghdag:test:sig -->\n", []string{"alice", "@bob"}, nil},
+		{"hello", "<!-- ghdag:test:sig -->", "", "hello\n<!-- ghdag:test:sig -->\n", "", []string{}, &erro.AlreadyInStateError{}},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		i.NumberOfConsecutiveComments = 1
+		i.LatestCommentBody = tt.current
+		if err := os.Setenv("GITHUB_COMMENT_MENTIONS", tt.mentionsEnv); err != nil {
+			t.Fatal(err)
+		}
+		if tt.wantErr == nil {
+			m.EXPECT().AddComment(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want), gomock.Eq(tt.wantMentions)).Return(nil)
+		}
+		if err := r.PerformCommentAction(ctx, i, tt.in, tt.sig); err != nil {
+			if !errors.As(err, tt.wantErr) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
 		}
