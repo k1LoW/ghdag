@@ -218,56 +218,58 @@ func TestPerformReviewersAction(t *testing.T) {
 	}
 }
 
-// func TestPerformStateAction(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
+func TestPerformStateAction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-// 	r, err := New(nil)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer func() {
-// 		if err := r.revertEnv(); err != nil {
-// 			t.Fatal(err)
-// 		}
-// 	}()
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
-// 	m := mock.NewMockGitHubClient(ctrl)
-// 	r.github = m
+	m := mock.NewMockGitHubClient(ctrl)
+	r.github = m
 
-// 	tests := []struct {
-// 		in      []string
-// 		current []string
-// 		want    []string
-// 		wantErr interface{}
-// 	}{
-// 		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
-// 		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
-// 	}
-// 	for _, tt := range tests {
-// 		if err := r.revertEnv(); err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		ctx := context.Background()
-// 		i := &target.Target{}
-// 		if err := faker.FakeData(i); err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if tt.current != nil {
-// 			i.Labels = tt.current
-// 		}
-// 		if tt.wantErr == nil {
-// 			m.EXPECT().SetLabels(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
-// 			if err := r.PerformLabelsAction(ctx, i, tt.in); err != nil {
-// 				t.Error(err)
-// 			}
-// 		} else {
-// 			if err := r.PerformLabelsAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
-// 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
-// 			}
-// 		}
-// 	}
-// }
+	tests := []struct {
+		in      string
+		wantErr bool
+	}{
+		{"close", false},
+		{"merge", false},
+		{"revert", true},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		switch tt.in {
+		case "close", "closed":
+			m.EXPECT().CloseIssue(gomock.Eq(ctx), gomock.Eq(i.Number)).Return(nil)
+			if err := r.PerformStateAction(ctx, i, tt.in); err != nil {
+				t.Error(err)
+			}
+		case "merge", "merged":
+			m.EXPECT().MergePullRequest(gomock.Eq(ctx), gomock.Eq(i.Number)).Return(nil)
+			if err := r.PerformStateAction(ctx, i, tt.in); err != nil {
+				t.Error(err)
+			}
+		default:
+			if err := r.PerformStateAction(ctx, i, tt.in); (err != nil) != tt.wantErr {
+				t.Errorf("got %v\nwant %v", err, tt.wantErr)
+			}
+		}
+	}
+}
 
 // func TestPerformNotifyAction(t *testing.T) {
 // 	ctrl := gomock.NewController(t)
