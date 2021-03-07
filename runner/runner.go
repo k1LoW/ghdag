@@ -28,7 +28,7 @@ import (
 
 type Runner struct {
 	config    *config.Config
-	github    gh.GitHubClient
+	github    gh.GhClient
 	slack     *slk.Client
 	envCache  []string
 	mu        sync.Mutex

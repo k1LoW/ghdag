@@ -12,31 +12,31 @@ import (
 	target "github.com/k1LoW/ghdag/target"
 )
 
-// MockGitHubClient is a mock of GitHubClient interface.
-type MockGitHubClient struct {
+// MockGhClient is a mock of GhClient interface.
+type MockGhClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockGitHubClientMockRecorder
+	recorder *MockGhClientMockRecorder
 }
 
-// MockGitHubClientMockRecorder is the mock recorder for MockGitHubClient.
-type MockGitHubClientMockRecorder struct {
-	mock *MockGitHubClient
+// MockGhClientMockRecorder is the mock recorder for MockGhClient.
+type MockGhClientMockRecorder struct {
+	mock *MockGhClient
 }
 
-// NewMockGitHubClient creates a new mock instance.
-func NewMockGitHubClient(ctrl *gomock.Controller) *MockGitHubClient {
-	mock := &MockGitHubClient{ctrl: ctrl}
-	mock.recorder = &MockGitHubClientMockRecorder{mock}
+// NewMockGhClient creates a new mock instance.
+func NewMockGhClient(ctrl *gomock.Controller) *MockGhClient {
+	mock := &MockGhClient{ctrl: ctrl}
+	mock.recorder = &MockGhClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockGitHubClient) EXPECT() *MockGitHubClientMockRecorder {
+func (m *MockGhClient) EXPECT() *MockGhClientMockRecorder {
 	return m.recorder
 }
 
 // AddComment mocks base method.
-func (m *MockGitHubClient) AddComment(ctx context.Context, n int, comment string, mentions []string) error {
+func (m *MockGhClient) AddComment(ctx context.Context, n int, comment string, mentions []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddComment", ctx, n, comment, mentions)
 	ret0, _ := ret[0].(error)
@@ -44,13 +44,13 @@ func (m *MockGitHubClient) AddComment(ctx context.Context, n int, comment string
 }
 
 // AddComment indicates an expected call of AddComment.
-func (mr *MockGitHubClientMockRecorder) AddComment(ctx, n, comment, mentions interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) AddComment(ctx, n, comment, mentions interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockGitHubClient)(nil).AddComment), ctx, n, comment, mentions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockGhClient)(nil).AddComment), ctx, n, comment, mentions)
 }
 
 // CloseIssue mocks base method.
-func (m *MockGitHubClient) CloseIssue(ctx context.Context, n int) error {
+func (m *MockGhClient) CloseIssue(ctx context.Context, n int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CloseIssue", ctx, n)
 	ret0, _ := ret[0].(error)
@@ -58,13 +58,13 @@ func (m *MockGitHubClient) CloseIssue(ctx context.Context, n int) error {
 }
 
 // CloseIssue indicates an expected call of CloseIssue.
-func (mr *MockGitHubClientMockRecorder) CloseIssue(ctx, n interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) CloseIssue(ctx, n interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseIssue", reflect.TypeOf((*MockGitHubClient)(nil).CloseIssue), ctx, n)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseIssue", reflect.TypeOf((*MockGhClient)(nil).CloseIssue), ctx, n)
 }
 
 // FetchTarget mocks base method.
-func (m *MockGitHubClient) FetchTarget(ctx context.Context, n int) (*target.Target, error) {
+func (m *MockGhClient) FetchTarget(ctx context.Context, n int) (*target.Target, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTarget", ctx, n)
 	ret0, _ := ret[0].(*target.Target)
@@ -73,13 +73,13 @@ func (m *MockGitHubClient) FetchTarget(ctx context.Context, n int) (*target.Targ
 }
 
 // FetchTarget indicates an expected call of FetchTarget.
-func (mr *MockGitHubClientMockRecorder) FetchTarget(ctx, n interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) FetchTarget(ctx, n interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTarget", reflect.TypeOf((*MockGitHubClient)(nil).FetchTarget), ctx, n)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTarget", reflect.TypeOf((*MockGhClient)(nil).FetchTarget), ctx, n)
 }
 
 // FetchTargets mocks base method.
-func (m *MockGitHubClient) FetchTargets(ctx context.Context) (target.Targets, error) {
+func (m *MockGhClient) FetchTargets(ctx context.Context) (target.Targets, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTargets", ctx)
 	ret0, _ := ret[0].(target.Targets)
@@ -88,13 +88,13 @@ func (m *MockGitHubClient) FetchTargets(ctx context.Context) (target.Targets, er
 }
 
 // FetchTargets indicates an expected call of FetchTargets.
-func (mr *MockGitHubClientMockRecorder) FetchTargets(ctx interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) FetchTargets(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTargets", reflect.TypeOf((*MockGitHubClient)(nil).FetchTargets), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTargets", reflect.TypeOf((*MockGhClient)(nil).FetchTargets), ctx)
 }
 
 // MergePullRequest mocks base method.
-func (m *MockGitHubClient) MergePullRequest(ctx context.Context, n int) error {
+func (m *MockGhClient) MergePullRequest(ctx context.Context, n int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MergePullRequest", ctx, n)
 	ret0, _ := ret[0].(error)
@@ -102,13 +102,13 @@ func (m *MockGitHubClient) MergePullRequest(ctx context.Context, n int) error {
 }
 
 // MergePullRequest indicates an expected call of MergePullRequest.
-func (mr *MockGitHubClientMockRecorder) MergePullRequest(ctx, n interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) MergePullRequest(ctx, n interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergePullRequest", reflect.TypeOf((*MockGitHubClient)(nil).MergePullRequest), ctx, n)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergePullRequest", reflect.TypeOf((*MockGhClient)(nil).MergePullRequest), ctx, n)
 }
 
 // ResolveUsers mocks base method.
-func (m *MockGitHubClient) ResolveUsers(ctx context.Context, in []string) ([]string, error) {
+func (m *MockGhClient) ResolveUsers(ctx context.Context, in []string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResolveUsers", ctx, in)
 	ret0, _ := ret[0].([]string)
@@ -117,13 +117,13 @@ func (m *MockGitHubClient) ResolveUsers(ctx context.Context, in []string) ([]str
 }
 
 // ResolveUsers indicates an expected call of ResolveUsers.
-func (mr *MockGitHubClientMockRecorder) ResolveUsers(ctx, in interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) ResolveUsers(ctx, in interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveUsers", reflect.TypeOf((*MockGitHubClient)(nil).ResolveUsers), ctx, in)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveUsers", reflect.TypeOf((*MockGhClient)(nil).ResolveUsers), ctx, in)
 }
 
 // SetAssignees mocks base method.
-func (m *MockGitHubClient) SetAssignees(ctx context.Context, n int, assignees []string) error {
+func (m *MockGhClient) SetAssignees(ctx context.Context, n int, assignees []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAssignees", ctx, n, assignees)
 	ret0, _ := ret[0].(error)
@@ -131,13 +131,13 @@ func (m *MockGitHubClient) SetAssignees(ctx context.Context, n int, assignees []
 }
 
 // SetAssignees indicates an expected call of SetAssignees.
-func (mr *MockGitHubClientMockRecorder) SetAssignees(ctx, n, assignees interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) SetAssignees(ctx, n, assignees interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignees", reflect.TypeOf((*MockGitHubClient)(nil).SetAssignees), ctx, n, assignees)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignees", reflect.TypeOf((*MockGhClient)(nil).SetAssignees), ctx, n, assignees)
 }
 
 // SetLabels mocks base method.
-func (m *MockGitHubClient) SetLabels(ctx context.Context, n int, labels []string) error {
+func (m *MockGhClient) SetLabels(ctx context.Context, n int, labels []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetLabels", ctx, n, labels)
 	ret0, _ := ret[0].(error)
@@ -145,13 +145,13 @@ func (m *MockGitHubClient) SetLabels(ctx context.Context, n int, labels []string
 }
 
 // SetLabels indicates an expected call of SetLabels.
-func (mr *MockGitHubClientMockRecorder) SetLabels(ctx, n, labels interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) SetLabels(ctx, n, labels interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLabels", reflect.TypeOf((*MockGitHubClient)(nil).SetLabels), ctx, n, labels)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLabels", reflect.TypeOf((*MockGhClient)(nil).SetLabels), ctx, n, labels)
 }
 
 // SetReviewers mocks base method.
-func (m *MockGitHubClient) SetReviewers(ctx context.Context, n int, reviewers []string) error {
+func (m *MockGhClient) SetReviewers(ctx context.Context, n int, reviewers []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetReviewers", ctx, n, reviewers)
 	ret0, _ := ret[0].(error)
@@ -159,7 +159,7 @@ func (m *MockGitHubClient) SetReviewers(ctx context.Context, n int, reviewers []
 }
 
 // SetReviewers indicates an expected call of SetReviewers.
-func (mr *MockGitHubClientMockRecorder) SetReviewers(ctx, n, reviewers interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) SetReviewers(ctx, n, reviewers interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReviewers", reflect.TypeOf((*MockGitHubClient)(nil).SetReviewers), ctx, n, reviewers)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReviewers", reflect.TypeOf((*MockGhClient)(nil).SetReviewers), ctx, n, reviewers)
 }

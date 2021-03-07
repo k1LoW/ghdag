@@ -21,7 +21,7 @@ import (
 const limit = 100
 const CommentSigPrefix = "<!-- ghdag:"
 
-type GitHubClient interface {
+type GhClient interface {
 	FetchTargets(ctx context.Context) (target.Targets, error)
 	FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	SetLabels(ctx context.Context, n int, labels []string) error

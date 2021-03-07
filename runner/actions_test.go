@@ -69,7 +69,7 @@ func TestPerformLabelsAction(t *testing.T) {
 		}
 	}()
 
-	m := mock.NewMockGitHubClient(ctrl)
+	m := mock.NewMockGhClient(ctrl)
 	r.github = m
 
 	tests := []struct {
@@ -120,7 +120,7 @@ func TestPerformAssigneesAction(t *testing.T) {
 		}
 	}()
 
-	m := mock.NewMockGitHubClient(ctrl)
+	m := mock.NewMockGhClient(ctrl)
 	r.github = m
 
 	tests := []struct {
@@ -170,7 +170,7 @@ func TestPerformReviewersAction(t *testing.T) {
 		}
 	}()
 
-	m := mock.NewMockGitHubClient(ctrl)
+	m := mock.NewMockGhClient(ctrl)
 	r.github = m
 
 	tests := []struct {
@@ -229,7 +229,7 @@ func TestPerformCommentAction(t *testing.T) {
 		}
 	}()
 
-	m := mock.NewMockGitHubClient(ctrl)
+	m := mock.NewMockGhClient(ctrl)
 	r.github = m
 
 	tests := []struct {
@@ -284,7 +284,7 @@ func TestPerformStateAction(t *testing.T) {
 		}
 	}()
 
-	m := mock.NewMockGitHubClient(ctrl)
+	m := mock.NewMockGhClient(ctrl)
 	r.github = m
 
 	tests := []struct {
@@ -337,7 +337,7 @@ func TestPerformStateAction(t *testing.T) {
 // 		}
 // 	}()
 
-// 	m := mock.NewMockGitHubClient(ctrl)
+// 	m := mock.NewMockGhClient(ctrl)
 // 	r.github = m
 
 // 	tests := []struct {
