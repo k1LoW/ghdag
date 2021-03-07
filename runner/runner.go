@@ -29,7 +29,7 @@ import (
 type Runner struct {
 	config    *config.Config
 	github    gh.GhClient
-	slack     *slk.Client
+	slack     slk.SlkClient
 	envCache  []string
 	mu        sync.Mutex
 	logPrefix string

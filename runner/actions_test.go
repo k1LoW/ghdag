@@ -323,53 +323,52 @@ func TestPerformStateAction(t *testing.T) {
 	}
 }
 
-// func TestPerformNotifyAction(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
+func TestPerformNotifyAction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-// 	r, err := New(nil)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer func() {
-// 		if err := r.revertEnv(); err != nil {
-// 			t.Fatal(err)
-// 		}
-// 	}()
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
-// 	m := mock.NewMockGhClient(ctrl)
-// 	r.github = m
+	m := mock.NewMockSlkClient(ctrl)
+	r.slack = m
 
-// 	tests := []struct {
-// 		in      []string
-// 		current []string
-// 		want    []string
-// 		wantErr interface{}
-// 	}{
-// 		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
-// 		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
-// 	}
-// 	for _, tt := range tests {
-// 		if err := r.revertEnv(); err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		ctx := context.Background()
-// 		i := &target.Target{}
-// 		if err := faker.FakeData(i); err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if tt.current != nil {
-// 			i.Labels = tt.current
-// 		}
-// 		if tt.wantErr == nil {
-// 			m.EXPECT().SetLabels(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
-// 			if err := r.PerformLabelsAction(ctx, i, tt.in); err != nil {
-// 				t.Error(err)
-// 			}
-// 		} else {
-// 			if err := r.PerformLabelsAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
-// 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
-// 			}
-// 		}
-// 	}
-// }
+	tests := []struct {
+		in           string
+		mentionsEnv  string
+		want         string
+		wantMentions []string
+		wantErr      interface{}
+	}{
+		{"hello", "", "hello", []string{}, nil},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("SLACK_API_TOKEN", "dummy"); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("SLACK_MENTIONS", tt.mentionsEnv); err != nil {
+			t.Fatal(err)
+		}
+		if tt.wantErr == nil {
+			m.EXPECT().PostMessage(gomock.Eq(ctx), gomock.Eq(tt.want), gomock.Eq(tt.wantMentions)).Return(nil)
+		}
+		if err := r.PerformNotifyAction(ctx, i, tt.in); err != nil {
+			t.Error(err)
+		}
+	}
+}
