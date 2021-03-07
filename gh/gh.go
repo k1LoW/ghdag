@@ -337,7 +337,18 @@ func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) er
 	return nil
 }
 
-func (c *Client) AddComment(ctx context.Context, n int, comment string) error {
+func (c *Client) AddComment(ctx context.Context, n int, comment string, mentions []string) error {
+	fm := []string{}
+	for _, m := range mentions {
+		if !strings.HasPrefix(m, "@") {
+			m = fmt.Sprintf("@%s", m)
+		}
+		fm = append(fm, m)
+	}
+	if len(fm) > 0 {
+		comment = fmt.Sprintf("%s %s", strings.Join(fm, " "), comment)
+	}
+
 	_, _, err := c.v3.Issues.CreateComment(ctx, c.owner, c.repo, n, &github.IssueComment{
 		Body: &comment,
 	})
