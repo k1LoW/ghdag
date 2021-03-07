@@ -105,3 +105,217 @@ func TestPerformLabelsAction(t *testing.T) {
 		}
 	}
 }
+
+func TestPerformAssigneesAction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	m := mock.NewMockGitHubClient(ctrl)
+	r.github = m
+
+	tests := []struct {
+		in      []string
+		current []string
+		want    []string
+		wantErr interface{}
+	}{
+		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		if tt.current != nil {
+			i.Labels = tt.current
+		}
+		if tt.wantErr == nil {
+			m.EXPECT().SetLabels(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
+			if err := r.PerformLabelsAction(ctx, i, tt.in); err != nil {
+				t.Error(err)
+			}
+		} else {
+			if err := r.PerformLabelsAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
+				t.Errorf("got %v\nwant %v", err, tt.wantErr)
+			}
+		}
+	}
+}
+
+func TestPerformReviewersAction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	m := mock.NewMockGitHubClient(ctrl)
+	r.github = m
+
+	tests := []struct {
+		in                []string
+		author            string
+		current           []string
+		currentCodeOwners []string
+		want              []string
+		wantErr           interface{}
+	}{
+		{[]string{"alice", "bob"}, "", nil, nil, []string{"alice", "bob"}, nil},
+		{[]string{"alice", "bob"}, "", []string{"alice", "bob"}, nil, nil, &erro.AlreadyInStateError{}},
+		{[]string{"alice", "bob"}, "", []string{"alice"}, nil, []string{"alice", "bob"}, nil},
+		{[]string{"alice", "bob"}, "", []string{}, []string{"bob"}, []string{"alice"}, nil},
+		{[]string{"alice", "bob"}, "alice", nil, nil, []string{"bob"}, nil},
+		{[]string{"alice"}, "alice", nil, nil, nil, &erro.NoReviewerError{}},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		if tt.author != "" {
+			i.Author = tt.author
+		}
+		if tt.current != nil {
+			i.Reviewers = tt.current
+			i.CodeOwners = tt.currentCodeOwners
+		}
+		if tt.wantErr == nil {
+			m.EXPECT().SetReviewers(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
+			if err := r.PerformReviewersAction(ctx, i, tt.in); err != nil {
+				t.Error(err)
+			}
+		} else {
+			if err := r.PerformReviewersAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
+				t.Errorf("got %v\nwant %v", err, tt.wantErr)
+			}
+		}
+	}
+}
+
+// func TestPerformStateAction(t *testing.T) {
+// 	ctrl := gomock.NewController(t)
+// 	defer ctrl.Finish()
+
+// 	r, err := New(nil)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	defer func() {
+// 		if err := r.revertEnv(); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 	}()
+
+// 	m := mock.NewMockGitHubClient(ctrl)
+// 	r.github = m
+
+// 	tests := []struct {
+// 		in      []string
+// 		current []string
+// 		want    []string
+// 		wantErr interface{}
+// 	}{
+// 		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
+// 		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
+// 	}
+// 	for _, tt := range tests {
+// 		if err := r.revertEnv(); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		ctx := context.Background()
+// 		i := &target.Target{}
+// 		if err := faker.FakeData(i); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		if tt.current != nil {
+// 			i.Labels = tt.current
+// 		}
+// 		if tt.wantErr == nil {
+// 			m.EXPECT().SetLabels(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
+// 			if err := r.PerformLabelsAction(ctx, i, tt.in); err != nil {
+// 				t.Error(err)
+// 			}
+// 		} else {
+// 			if err := r.PerformLabelsAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
+// 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
+// 			}
+// 		}
+// 	}
+// }
+
+// func TestPerformNotifyAction(t *testing.T) {
+// 	ctrl := gomock.NewController(t)
+// 	defer ctrl.Finish()
+
+// 	r, err := New(nil)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	defer func() {
+// 		if err := r.revertEnv(); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 	}()
+
+// 	m := mock.NewMockGitHubClient(ctrl)
+// 	r.github = m
+
+// 	tests := []struct {
+// 		in      []string
+// 		current []string
+// 		want    []string
+// 		wantErr interface{}
+// 	}{
+// 		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
+// 		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
+// 	}
+// 	for _, tt := range tests {
+// 		if err := r.revertEnv(); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		ctx := context.Background()
+// 		i := &target.Target{}
+// 		if err := faker.FakeData(i); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		if tt.current != nil {
+// 			i.Labels = tt.current
+// 		}
+// 		if tt.wantErr == nil {
+// 			m.EXPECT().SetLabels(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
+// 			if err := r.PerformLabelsAction(ctx, i, tt.in); err != nil {
+// 				t.Error(err)
+// 			}
+// 		} else {
+// 			if err := r.PerformLabelsAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
+// 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
+// 			}
+// 		}
+// 	}
+// }
