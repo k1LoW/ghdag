@@ -19,7 +19,19 @@ import (
 )
 
 const limit = 100
-const CommentLogPrefix = "<!-- ghdag:"
+const CommentSigPrefix = "<!-- ghdag:"
+
+type GhClient interface {
+	FetchTargets(ctx context.Context) (target.Targets, error)
+	FetchTarget(ctx context.Context, n int) (*target.Target, error)
+	SetLabels(ctx context.Context, n int, labels []string) error
+	SetAssignees(ctx context.Context, n int, assignees []string) error
+	SetReviewers(ctx context.Context, n int, reviewers []string) error
+	AddComment(ctx context.Context, n int, comment string, mentions []string) error
+	CloseIssue(ctx context.Context, n int) error
+	MergePullRequest(ctx context.Context, n int) error
+	ResolveUsers(ctx context.Context, in []string) ([]string, error)
+}
 
 type Client struct {
 	v3    *github.Client
@@ -423,7 +435,7 @@ func buildTargetFromIssue(i issueNode, now time.Time) (*target.Target, error) {
 	}
 	numComments := 0
 	for _, c := range i.Comments.Nodes {
-		if !strings.Contains(string(c.Body), CommentLogPrefix) {
+		if !strings.Contains(string(c.Body), CommentSigPrefix) {
 			break
 		}
 		numComments++
@@ -479,7 +491,7 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 	}
 	numComments := 0
 	for _, c := range p.Comments.Nodes {
-		if !strings.Contains(string(c.Body), CommentLogPrefix) {
+		if !strings.Contains(string(c.Body), CommentSigPrefix) {
 			break
 		}
 		numComments++

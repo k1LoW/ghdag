@@ -1,12 +1,10 @@
 package runner
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -18,8 +16,6 @@ import (
 	"time"
 
 	"github.com/antonmedv/expr"
-	"github.com/google/go-cmp/cmp"
-	"github.com/k1LoW/exec"
 	"github.com/k1LoW/ghdag/config"
 	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/erro"
@@ -32,8 +28,8 @@ import (
 
 type Runner struct {
 	config    *config.Config
-	github    *gh.Client
-	slack     *slk.Client
+	github    gh.GhClient
+	slack     slk.SlkClient
 	envCache  []string
 	mu        sync.Mutex
 	logPrefix string
@@ -70,16 +66,10 @@ func (r *Runner) Run(ctx context.Context) error {
 	if err := r.config.Env.Setenv(); err != nil {
 		return err
 	}
-	gc, err := gh.NewClient()
-	if err != nil {
+
+	if err := r.initClients(); err != nil {
 		return err
 	}
-	r.github = gc
-	sc, err := slk.NewClient()
-	if err != nil {
-		return err
-	}
-	r.slack = sc
 
 	targets, err := r.fetchTargets(ctx)
 	maxDigits := targets.MaxDigits()
@@ -242,6 +232,24 @@ func (r *Runner) Run(ctx context.Context) error {
 	return nil
 }
 
+func (r *Runner) initClients() error {
+	if r.github == nil {
+		gc, err := gh.NewClient()
+		if err != nil {
+			return err
+		}
+		r.github = gc
+	}
+	if r.slack == nil {
+		sc, err := slk.NewClient()
+		if err != nil {
+			return err
+		}
+		r.slack = sc
+	}
+	return nil
+}
+
 func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, t *task.Task, q chan TaskQueue) error {
 	if a == nil {
 		return nil
@@ -249,144 +257,22 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 
 	switch {
 	case a.Run != "":
-		c := exec.CommandContext(ctx, "sh", "-c", a.Run)
-		c.Env = os.Environ()
-		outbuf := new(bytes.Buffer)
-		outmr := io.MultiWriter(os.Stdout, outbuf)
-		c.Stdout = outmr
-		errbuf := new(bytes.Buffer)
-		errmr := io.MultiWriter(os.Stderr, errbuf)
-		c.Stderr = errmr
-		if err := c.Run(); err != nil {
-			return err
-		}
-		if err := os.Setenv("GHDAG_ACTION_RUN_STDOUT", outbuf.String()); err != nil {
-			return err
-		}
-		if err := os.Setenv("GHDAG_ACTION_RUN_STDERR", errbuf.String()); err != nil {
-			return err
-		}
-		return nil
+		return r.PerformRunAction(ctx, i, a.Run)
 	case len(a.Labels) > 0:
-		sortStringSlice(i.Labels)
-		sortStringSlice(a.Labels)
-		r.log(fmt.Sprintf("Set labels: %s", strings.Join(a.Labels, ", ")))
-		if cmp.Equal(i.Labels, a.Labels) {
-			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Labels, ", ")))
-		}
-		return r.github.SetLabels(ctx, i.Number, a.Labels)
+		return r.PerformLabelsAction(ctx, i, a.Labels)
 	case len(a.Assignees) > 0:
-		as, err := r.github.ResolveUsers(ctx, a.Assignees)
-		if err != nil {
-			return err
-		}
-		sortStringSlice(i.Assignees)
-		as, err = r.sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
-		if err != nil {
-			return err
-		}
-		sortStringSlice(as)
-		r.log(fmt.Sprintf("Set assignees: %s", strings.Join(as, ", ")))
-		if cmp.Equal(i.Assignees, as) {
-			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Assignees, ", ")))
-		}
-		return r.github.SetAssignees(ctx, i.Number, as)
+		return r.PerformAssigneesAction(ctx, i, a.Assignees)
 	case len(a.Reviewers) > 0:
-		reviewers := []string{}
-		if contains(a.Reviewers, i.Author) {
-			r.debuglog(fmt.Sprintf("Exclude author from reviewers: %s", a.Reviewers))
-			reviewers = exclude(a.Reviewers, i.Author)
-		}
-		reviewers, err := r.sampleByEnv(reviewers, "GITHUB_REVIEWERS_SAMPLE")
-		if err != nil {
-			return err
-		}
-		if len(reviewers) == 0 {
-			return erro.NewNoReviewerError(errors.New("no reviewers to assign"))
-		}
-
-		r.log(fmt.Sprintf("Set reviewers: %s", strings.Join(reviewers, ", ")))
-
-		rb := i.NoCodeOwnerReviewers()
-		sortStringSlice(rb)
-
-		ra := []string{}
-		for _, r := range reviewers {
-			if contains(i.CodeOwners, r) {
-				continue
-			}
-			ra = append(ra, r)
-		}
-		sortStringSlice(ra)
-
-		if len(ra) == 0 || cmp.Equal(rb, ra) {
-			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(a.Reviewers, ", ")))
-		}
-		return r.github.SetReviewers(ctx, i.Number, ra)
+		return r.PerformReviewersAction(ctx, i, a.Reviewers)
 	case a.Comment != "":
-		c, err := env.ParseWithEnviron(a.Comment, env.EnvMap())
-		if err != nil {
-			return err
-		}
-		mentions, err := env.ToSlice(os.Getenv("GITHUB_COMMENT_MENTIONS"))
-		if err != nil {
-			return err
-		}
-		mentions, err = r.sampleByEnv(mentions, "GITHUB_COMMENT_MENTIONS_SAMPLE")
-		if err != nil {
-			return err
-		}
-		r.log(fmt.Sprintf("Add comment: %s", c))
-		if i.NumberOfConsecutiveComments >= 5 {
-			return fmt.Errorf("Too many comments in a row by ghdag: %d", i.NumberOfConsecutiveComments)
-		}
-
-		c = fmt.Sprintf("%s\n%s%s:%s -->\n", c, gh.CommentLogPrefix, t.Id, a.Type)
-
-		if i.LatestCommentBody == c {
-			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))
-		}
-		return r.github.AddComment(ctx, i.Number, c, mentions)
+		sig := fmt.Sprintf("%s%s:%s -->", gh.CommentSigPrefix, t.Id, a.Type)
+		return r.PerformCommentAction(ctx, i, a.Comment, sig)
 	case a.State != "":
-		r.log(fmt.Sprintf("Change state: %s", a.State))
-		switch a.State {
-		case "close", "closed":
-			return r.github.CloseIssue(ctx, i.Number)
-		case "merge", "merged":
-			return r.github.MergePullRequest(ctx, i.Number)
-		default:
-			return fmt.Errorf("invalid state: %s", a.State)
-		}
+		return r.PerformStateAction(ctx, i, a.State)
 	case a.Notify != "":
-		n, err := env.ParseWithEnviron(a.Notify, env.EnvMap())
-		if err != nil {
-			return err
-		}
-		mentions, err := env.ToSlice(os.Getenv("SLACK_MENTIONS"))
-		if err != nil {
-			return err
-		}
-		mentions, err = r.sampleByEnv(mentions, "SLACK_MENTIONS_SAMPLE")
-		if err != nil {
-			return err
-		}
-		r.log(fmt.Sprintf("Send notification: %s", n))
-		return r.slack.PostMessage(ctx, n, mentions)
+		return r.PerformNotifyAction(ctx, i, a.Notify)
 	case len(a.Next) > 0:
-		r.log(fmt.Sprintf("Call next task: %s", strings.Join(a.Next, ", ")))
-		for _, id := range a.Next {
-			nt, err := r.config.Tasks.Find(id)
-			if err != nil {
-				return err
-			}
-			q <- TaskQueue{
-				target:     i,
-				task:       nt,
-				called:     true,
-				callerTask: t,
-				callerSeed: r.seed,
-			}
-		}
+		return r.performNextAction(ctx, i, t, q, a.Next)
 	}
 	return nil
 }

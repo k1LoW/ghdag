@@ -10,6 +10,10 @@ import (
 	"github.com/slack-go/slack"
 )
 
+type SlkClient interface {
+	PostMessage(ctx context.Context, m string, mentions []string) error
+}
+
 type Client struct {
 	client         *slack.Client
 	channelCache   map[string]slack.Channel
