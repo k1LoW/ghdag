@@ -79,7 +79,7 @@ func TestPerformLabelsAction(t *testing.T) {
 		wantErr interface{}
 	}{
 		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
-		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
+		{[]string{"bug", "question"}, []string{"bug", "question"}, nil, &erro.AlreadyInStateError{}},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -129,8 +129,8 @@ func TestPerformAssigneesAction(t *testing.T) {
 		want    []string
 		wantErr interface{}
 	}{
-		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
-		{[]string{"bug", "question"}, []string{"bug", "question"}, []string{"bug", "question"}, &erro.AlreadyInStateError{}},
+		{[]string{"alice", "bob"}, nil, []string{"alice", "bob"}, nil},
+		{[]string{"alice", "bob"}, []string{"alice", "bob"}, nil, &erro.AlreadyInStateError{}},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -142,15 +142,14 @@ func TestPerformAssigneesAction(t *testing.T) {
 			t.Fatal(err)
 		}
 		if tt.current != nil {
-			i.Labels = tt.current
+			i.Assignees = tt.current
 		}
+		m.EXPECT().ResolveUsers(gomock.Eq(ctx), gomock.Eq(tt.in)).Return(tt.in, nil)
 		if tt.wantErr == nil {
-			m.EXPECT().SetLabels(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
-			if err := r.PerformLabelsAction(ctx, i, tt.in); err != nil {
-				t.Error(err)
-			}
-		} else {
-			if err := r.PerformLabelsAction(ctx, i, tt.in); !errors.As(err, tt.wantErr) {
+			m.EXPECT().SetAssignees(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
+		}
+		if err := r.PerformAssigneesAction(ctx, i, tt.in); err != nil {
+			if !errors.As(err, tt.wantErr) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
 		}
