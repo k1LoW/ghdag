@@ -1,5 +1,7 @@
 # ghdag
 
+[![build](https://github.com/k1LoW/ghdag/actions/workflows/ci.yml/badge.svg)](https://github.com/k1LoW/ghdag/actions) [![ghdag workflow](https://github.com/k1LoW/ghdag/actions/workflows/ghdag_workflow.yml/badge.svg)](https://github.com/k1LoW/ghdag/actions/workflows/ghdag_workflow.yml)
+
 :octocat: `ghdag` is a tiny workflow engine for GitHub issue and pull request.
 
 Key features of `ghdag` are:
