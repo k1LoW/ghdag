@@ -5,7 +5,7 @@
 Key features of `ghdag` are:
 
 - Simple definition of workflows to improve the lifecycle of issues and pull requests.
-- Built-in GitHub and Slack integration.
+- Built-in GitHub and Slack actions.
 - Optimized for running on GitHub Actions, it is easier to configure when running on GitHub Actions.
 
 ## Getting Started
