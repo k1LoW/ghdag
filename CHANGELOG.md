@@ -1,3 +1,11 @@
+## [v0.5.0](https://github.com/k1LoW/ghdag/compare/v0.4.0...v0.5.0) (2021-03-08)
+
+* Refactor runner.Runner [#34](https://github.com/k1LoW/ghdag/pull/34) ([k1LoW](https://github.com/k1LoW))
+* Fix: raise EOF error when TARGET_ENV="" [#33](https://github.com/k1LoW/ghdag/pull/33) ([k1LoW](https://github.com/k1LoW))
+* Add `GITHUB_COMMENT_MENTIONS` to add mentions to comment. [#32](https://github.com/k1LoW/ghdag/pull/32) ([k1LoW](https://github.com/k1LoW))
+* Exclude author from reviewers [#31](https://github.com/k1LoW/ghdag/pull/31) ([k1LoW](https://github.com/k1LoW))
+* Add env.ToSlice() [#30](https://github.com/k1LoW/ghdag/pull/30) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.4.0](https://github.com/k1LoW/ghdag/compare/v0.3.0...v0.4.0) (2021-03-05)
 
 * Update Dockerfile [#29](https://github.com/k1LoW/ghdag/pull/29) ([k1LoW](https://github.com/k1LoW))
