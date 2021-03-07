@@ -87,6 +87,7 @@ func TestToSlice(t *testing.T) {
 		{"bug,  question", []string{"bug", "question"}},
 		{`bug "help wanted"`, []string{"bug", "help wanted"}},
 		{`bug 'help wanted'`, []string{"bug", "help wanted"}},
+		{"", []string{}},
 	}
 	for _, tt := range tests {
 		got, err := ToSlice(tt.in)

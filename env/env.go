@@ -83,6 +83,9 @@ func EnvMap() map[string]string {
 }
 
 func ToSlice(in string) ([]string, error) {
+	if in == "" {
+		return []string{}, nil
+	}
 	sq := strings.Count(in, "'")
 	if sq > 0 && (sq%2 == 0) {
 		in = strings.Replace(in, `'`, `"`, -1)
