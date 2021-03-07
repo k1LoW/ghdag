@@ -355,7 +355,9 @@ tasks:
 | `SLACK_CHANNEL` | A Slack channel to be notified | - |
 | `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` section. | - |
 | `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` section. | - |
-| `SLACK_MENTIONS` | Mentions to be given to notifications | - |
+| `GITHUB_COMMENT_MENTIONS` | Mentions to be given to comment | - |
+| `GITHUB_COMMENT_MENTIONS_SAMPLE` | Number of users to randomly select from those listed in `GITHUB_COMMENT_MENTIONS`. | - |
+| `SLACK_MENTIONS` | Mentions to be given to Slack message | - |
 | `SLACK_MENTIONS_SAMPLE` | Number of users to randomly select from those listed in `SLACK_MENTIONS`. | - |
 | `GHDAG_SAMPLE_WITH_SAME_SEED` | Sample using the same random seed as the previous action/task or not. | - |
 | `SLACK_USERNAME` | Custom `username` of slack message. Require `chat:write.customize` scope. | |

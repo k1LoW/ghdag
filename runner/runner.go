@@ -328,8 +328,15 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		if err != nil {
 			return err
 		}
+		mentions, err := env.ToSlice(os.Getenv("GITHUB_COMMENT_MENTIONS"))
+		if err != nil {
+			return err
+		}
+		mentions, err = r.sampleByEnv(mentions, "GITHUB_COMMENT_MENTIONS_SAMPLE")
+		if err != nil {
+			return err
+		}
 		r.log(fmt.Sprintf("Add comment: %s", c))
-
 		if i.NumberOfConsecutiveComments >= 5 {
 			return fmt.Errorf("Too many comments in a row by ghdag: %d", i.NumberOfConsecutiveComments)
 		}
@@ -339,7 +346,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		if i.LatestCommentBody == c {
 			return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))
 		}
-		return r.github.AddComment(ctx, i.Number, c)
+		return r.github.AddComment(ctx, i.Number, c, mentions)
 	case a.State != "":
 		r.log(fmt.Sprintf("Change state: %s", a.State))
 		switch a.State {
