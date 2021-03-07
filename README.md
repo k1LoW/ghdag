@@ -2,6 +2,12 @@
 
 :octocat: `ghdag` is a tiny workflow engine for GitHub issue and pull request.
 
+Key features of `ghdag` are:
+
+- Simple definition of workflows to improve the lifecycle of issues and pull requests.
+- Built-in GitHub and Slack integration.
+- Optimized for running on GitHub Actions, it is easier to configure when running on GitHub Actions.
+
 ## Getting Started
 
 ### Generate a workflow file
