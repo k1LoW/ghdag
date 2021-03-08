@@ -36,17 +36,17 @@ func (m *MockGhClient) EXPECT() *MockGhClientMockRecorder {
 }
 
 // AddComment mocks base method.
-func (m *MockGhClient) AddComment(ctx context.Context, n int, comment string, mentions []string) error {
+func (m *MockGhClient) AddComment(ctx context.Context, n int, comment string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddComment", ctx, n, comment, mentions)
+	ret := m.ctrl.Call(m, "AddComment", ctx, n, comment)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddComment indicates an expected call of AddComment.
-func (mr *MockGhClientMockRecorder) AddComment(ctx, n, comment, mentions interface{}) *gomock.Call {
+func (mr *MockGhClientMockRecorder) AddComment(ctx, n, comment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockGhClient)(nil).AddComment), ctx, n, comment, mentions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockGhClient)(nil).AddComment), ctx, n, comment)
 }
 
 // CloseIssue mocks base method.

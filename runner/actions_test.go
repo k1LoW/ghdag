@@ -8,6 +8,7 @@ import (
 
 	"github.com/bxcodec/faker/v3"
 	"github.com/golang/mock/gomock"
+	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/erro"
 	"github.com/k1LoW/ghdag/mock"
 	"github.com/k1LoW/ghdag/target"
@@ -103,6 +104,9 @@ func TestPerformLabelsAction(t *testing.T) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
 		}
+		if got := os.Getenv("GHDAG_ACTION_LABELS_UPDATED"); got != env.Join(tt.want) {
+			t.Errorf("got %v\nwant %v", got, env.Join(tt.want))
+		}
 	}
 }
 
@@ -152,6 +156,9 @@ func TestPerformAssigneesAction(t *testing.T) {
 			if !errors.As(err, tt.wantErr) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
+		}
+		if got := os.Getenv("GHDAG_ACTION_ASSIGNEES_UPDATED"); got != env.Join(tt.want) {
+			t.Errorf("got %v\nwant %v", got, env.Join(tt.want))
 		}
 	}
 }
@@ -212,6 +219,9 @@ func TestPerformReviewersAction(t *testing.T) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
 		}
+		if got := os.Getenv("GHDAG_ACTION_REVIEWERS_UPDATED"); got != env.Join(tt.want) {
+			t.Errorf("got %v\nwant %v", got, env.Join(tt.want))
+		}
 	}
 }
 
@@ -233,17 +243,16 @@ func TestPerformCommentAction(t *testing.T) {
 	r.github = m
 
 	tests := []struct {
-		in           string
-		sig          string
-		mentionsEnv  string
-		current      string
-		want         string
-		wantMentions []string
-		wantErr      interface{}
+		in          string
+		sig         string
+		mentionsEnv string
+		current     string
+		want        string
+		wantErr     interface{}
 	}{
-		{"hello", "<!-- ghdag:test:sig -->", "", "", "hello\n<!-- ghdag:test:sig -->\n", []string{}, nil},
-		{"hello", "<!-- ghdag:test:sig -->", "alice @bob", "", "hello\n<!-- ghdag:test:sig -->\n", []string{"alice", "@bob"}, nil},
-		{"hello", "<!-- ghdag:test:sig -->", "", "hello\n<!-- ghdag:test:sig -->\n", "", []string{}, &erro.AlreadyInStateError{}},
+		{"hello", "<!-- ghdag:test:sig -->", "", "", "hello\n<!-- ghdag:test:sig -->\n", nil},
+		{"hello", "<!-- ghdag:test:sig -->", "alice @bob", "", "@alice @bob hello\n<!-- ghdag:test:sig -->\n", nil},
+		{"hello", "<!-- ghdag:test:sig -->", "", "hello\n<!-- ghdag:test:sig -->\n", "", &erro.AlreadyInStateError{}},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -260,12 +269,15 @@ func TestPerformCommentAction(t *testing.T) {
 			t.Fatal(err)
 		}
 		if tt.wantErr == nil {
-			m.EXPECT().AddComment(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want), gomock.Eq(tt.wantMentions)).Return(nil)
+			m.EXPECT().AddComment(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
 		}
 		if err := r.PerformCommentAction(ctx, i, tt.in, tt.sig); err != nil {
 			if !errors.As(err, tt.wantErr) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
+		}
+		if got := os.Getenv("GHDAG_ACTION_COMMENT_CREATED"); got != tt.want {
+			t.Errorf("got %v\nwant %v", got, tt.want)
 		}
 	}
 }
@@ -289,11 +301,12 @@ func TestPerformStateAction(t *testing.T) {
 
 	tests := []struct {
 		in      string
+		want    string
 		wantErr bool
 	}{
-		{"close", false},
-		{"merge", false},
-		{"revert", true},
+		{"close", "closed", false},
+		{"merge", "merged", false},
+		{"revert", "", true},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -320,6 +333,9 @@ func TestPerformStateAction(t *testing.T) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
 		}
+		if got := os.Getenv("GHDAG_ACTION_STATE_CHANGED"); got != tt.want {
+			t.Errorf("got %v\nwant %v", got, tt.want)
+		}
 	}
 }
 
@@ -341,13 +357,12 @@ func TestPerformNotifyAction(t *testing.T) {
 	r.slack = m
 
 	tests := []struct {
-		in           string
-		mentionsEnv  string
-		want         string
-		wantMentions []string
-		wantErr      interface{}
+		in          string
+		mentionsEnv string
+		want        string
+		wantErr     interface{}
 	}{
-		{"hello", "", "hello", []string{}, nil},
+		{"hello", "", "hello", nil},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -365,10 +380,13 @@ func TestPerformNotifyAction(t *testing.T) {
 			t.Fatal(err)
 		}
 		if tt.wantErr == nil {
-			m.EXPECT().PostMessage(gomock.Eq(ctx), gomock.Eq(tt.want), gomock.Eq(tt.wantMentions)).Return(nil)
+			m.EXPECT().PostMessage(gomock.Eq(ctx), gomock.Eq(tt.want)).Return(nil)
 		}
 		if err := r.PerformNotifyAction(ctx, i, tt.in); err != nil {
 			t.Error(err)
+		}
+		if got := os.Getenv("GHDAG_ACTION_NOTIFY_SENT"); got != tt.want {
+			t.Errorf("got %v\nwant %v", got, tt.want)
 		}
 	}
 }

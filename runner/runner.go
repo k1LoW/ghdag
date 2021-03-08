@@ -261,14 +261,14 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	case len(a.Labels) > 0:
 		return r.PerformLabelsAction(ctx, i, a.Labels)
 	case len(a.Assignees) > 0 || (a.Assignees != nil && os.Getenv("GITHUB_ASSIGNEES") != ""):
-		as, err := env.ToSlice(os.Getenv("GITHUB_ASSIGNEES"))
+		as, err := env.Split(os.Getenv("GITHUB_ASSIGNEES"))
 		if err != nil {
 			return err
 		}
 		assignees := append(a.Assignees, as...)
 		return r.PerformAssigneesAction(ctx, i, assignees)
 	case len(a.Reviewers) > 0 || (a.Reviewers != nil && os.Getenv("GITHUB_REVIEWERS") != ""):
-		rs, err := env.ToSlice(os.Getenv("GITHUB_ASSIGNEES"))
+		rs, err := env.Split(os.Getenv("GITHUB_ASSIGNEES"))
 		if err != nil {
 			return err
 		}

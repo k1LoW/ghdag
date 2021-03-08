@@ -217,6 +217,12 @@ A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to 
 | `GHDAG_CALLER_TASK_ID` | Task ID of the caller via the `next:` action |
 | `GHDAG_ACTION_RUN_STDOUT` | STDOUT of the `run` action |
 | `GHDAG_ACTION_RUN_STDERR` | STDERR of the `run` action |
+| `GHDAG_ACTION_LABELS_UPDATED` | Update result of the `labels:` action |
+| `GHDAG_ACTION_ASSIGNEES_UPDATED` | Update result of the `assgnees:` action |
+| `GHDAG_ACTION_REVIEWERS_UPDATED` | Update result of the `reviewers:` action |
+| `GHDAG_ACTION_COMMENT_CREATED` | Created comment of the `comment:` action |
+| `GHDAG_ACTION_STATE_CHANGED` | Changed state of the `state:` action |
+| `GHDAG_ACTION_NOTIFY_SENT` | Sent message of the `notify:` action |
 | `GHDAG_ACTION_DO_ERROR` | Error message when `do:` action failed |
 | `GHDAG_TASK_*` | [Variables available in the `if:` section](https://github.com/k1LoW/ghdag#available-variables). ( ex. `number` -> `GHDAG_TASK_NUMBER` ) |
 
@@ -272,7 +278,7 @@ env:
 
 #### `tasks[*].<action_type>.comment:`
 
-Add new comment to the target issue or pull request.
+Create new comment to the target issue or pull request.
 
 **Example**
 

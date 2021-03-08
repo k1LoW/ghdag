@@ -74,7 +74,7 @@ func TestSetenv(t *testing.T) {
 	}
 }
 
-func TestToSlice(t *testing.T) {
+func TestSplit(t *testing.T) {
 	tests := []struct {
 		in   string
 		want []string
@@ -90,11 +90,15 @@ func TestToSlice(t *testing.T) {
 		{"", []string{}},
 	}
 	for _, tt := range tests {
-		got, err := ToSlice(tt.in)
+		got, err := Split(tt.in)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if diff := cmp.Diff(got, tt.want, nil); diff != "" {
+			t.Errorf("%s", diff)
+		}
+		got2, err := Split(Join(got))
+		if diff := cmp.Diff(got, got2, nil); diff != "" {
 			t.Errorf("%s", diff)
 		}
 	}
