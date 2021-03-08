@@ -357,8 +357,8 @@ tasks:
 | `SLACK_API_TOKEN` | A Slack OAuth access token | - |
 | `SLACK_WEBHOOK_URL` | A Slack incoming webhook URL | - |
 | `SLACK_CHANNEL` | A Slack channel to be notified | - |
-| `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` section. | - |
-| `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` section. | - |
+| `GITHUB_ASSIGNEES_SAMPLE` | Number of users to randomly select from those listed in the `assignees:` action. | - |
+| `GITHUB_REVIEWERS_SAMPLE` | Number of users to randomly select from those listed in the `reviewers:` action. | - |
 | `GITHUB_COMMENT_MENTIONS` | Mentions to be given to comment | - |
 | `GITHUB_COMMENT_MENTIONS_SAMPLE` | Number of users to randomly select from those listed in `GITHUB_COMMENT_MENTIONS`. | - |
 | `SLACK_MENTIONS` | Mentions to be given to Slack message | - |
@@ -367,8 +367,8 @@ tasks:
 | `SLACK_USERNAME` | Custom `username` of slack message. Require `chat:write.customize` scope. | |
 | `SLACK_ICON_EMOJI` | Custom `icon_emoji` of slack message. Require `chat:write.customize` scope. | |
 | `SLACK_ICON_URL` | Custom `icon_url` of slack message. Require `chat:write.customize` scope. | |
-| `GITHUB_ASSIGNEES` | Additional Assignees to the list in the `assignees:` section | - |
-| `GITHUB_REVIEWERS` | Additional Reviewers to the list in the `reviewers:` section | - |
+| `GITHUB_ASSIGNEES` | Additional Assignees to the list in the `assignees:` action | - |
+| `GITHUB_REVIEWERS` | Additional Reviewers to the list in the `reviewers:` action | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
