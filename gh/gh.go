@@ -27,7 +27,7 @@ type GhClient interface {
 	SetLabels(ctx context.Context, n int, labels []string) error
 	SetAssignees(ctx context.Context, n int, assignees []string) error
 	SetReviewers(ctx context.Context, n int, reviewers []string) error
-	AddComment(ctx context.Context, n int, comment string, mentions []string) error
+	AddComment(ctx context.Context, n int, comment string) error
 	CloseIssue(ctx context.Context, n int) error
 	MergePullRequest(ctx context.Context, n int) error
 	ResolveUsers(ctx context.Context, in []string) ([]string, error)
@@ -349,18 +349,7 @@ func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) er
 	return nil
 }
 
-func (c *Client) AddComment(ctx context.Context, n int, comment string, mentions []string) error {
-	fm := []string{}
-	for _, m := range mentions {
-		if !strings.HasPrefix(m, "@") {
-			m = fmt.Sprintf("@%s", m)
-		}
-		fm = append(fm, m)
-	}
-	if len(fm) > 0 {
-		comment = fmt.Sprintf("%s %s", strings.Join(fm, " "), comment)
-	}
-
+func (c *Client) AddComment(ctx context.Context, n int, comment string) error {
 	_, _, err := c.v3.Issues.CreateComment(ctx, c.owner, c.repo, n, &github.IssueComment{
 		Body: &comment,
 	})

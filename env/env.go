@@ -3,6 +3,7 @@ package env
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -82,7 +83,7 @@ func EnvMap() map[string]string {
 	return m
 }
 
-func ToSlice(in string) ([]string, error) {
+func Split(in string) ([]string, error) {
 	if in == "" {
 		return []string{}, nil
 	}
@@ -107,4 +108,15 @@ func ToSlice(in string) ([]string, error) {
 		res = append(res, trimed)
 	}
 	return res, nil
+}
+
+func Join(in []string) string {
+	formated := []string{}
+	for _, s := range in {
+		if strings.Contains(s, " ") {
+			s = fmt.Sprintf(`"%s"`, s)
+		}
+		formated = append(formated, s)
+	}
+	return strings.Join(formated, " ")
 }

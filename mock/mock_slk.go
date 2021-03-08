@@ -34,16 +34,31 @@ func (m *MockSlkClient) EXPECT() *MockSlkClientMockRecorder {
 	return m.recorder
 }
 
+// GetMentionLinkByName mocks base method.
+func (m *MockSlkClient) GetMentionLinkByName(ctx context.Context, name string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMentionLinkByName", ctx, name)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMentionLinkByName indicates an expected call of GetMentionLinkByName.
+func (mr *MockSlkClientMockRecorder) GetMentionLinkByName(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMentionLinkByName", reflect.TypeOf((*MockSlkClient)(nil).GetMentionLinkByName), ctx, name)
+}
+
 // PostMessage mocks base method.
-func (m_2 *MockSlkClient) PostMessage(ctx context.Context, m string, mentions []string) error {
+func (m_2 *MockSlkClient) PostMessage(ctx context.Context, m string) error {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "PostMessage", ctx, m, mentions)
+	ret := m_2.ctrl.Call(m_2, "PostMessage", ctx, m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PostMessage indicates an expected call of PostMessage.
-func (mr *MockSlkClientMockRecorder) PostMessage(ctx, m, mentions interface{}) *gomock.Call {
+func (mr *MockSlkClientMockRecorder) PostMessage(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessage", reflect.TypeOf((*MockSlkClient)(nil).PostMessage), ctx, m, mentions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessage", reflect.TypeOf((*MockSlkClient)(nil).PostMessage), ctx, m)
 }

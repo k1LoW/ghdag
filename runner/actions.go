@@ -45,7 +45,13 @@ func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labe
 	if cmp.Equal(i.Labels, labels) {
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(labels, ", ")))
 	}
-	return r.github.SetLabels(ctx, i.Number, labels)
+	if err := r.github.SetLabels(ctx, i.Number, labels); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_ACTION_LABELS_UPDATED", env.Join(labels)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, assignees []string) error {
@@ -63,7 +69,13 @@ func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, a
 	if cmp.Equal(i.Assignees, as) {
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(as, ", ")))
 	}
-	return r.github.SetAssignees(ctx, i.Number, as)
+	if err := r.github.SetAssignees(ctx, i.Number, as); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(as)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, reviewers []string) error {
@@ -96,7 +108,13 @@ func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, r
 	if len(ra) == 0 || cmp.Equal(rb, ra) {
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(reviewers, ", ")))
 	}
-	return r.github.SetReviewers(ctx, i.Number, ra)
+	if err := r.github.SetReviewers(ctx, i.Number, ra); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_ACTION_REVIEWERS_UPDATED", env.Join(ra)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, comment, sig string) error {
@@ -104,7 +122,7 @@ func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, com
 	if err != nil {
 		return err
 	}
-	mentions, err := env.ToSlice(os.Getenv("GITHUB_COMMENT_MENTIONS"))
+	mentions, err := env.Split(os.Getenv("GITHUB_COMMENT_MENTIONS"))
 	if err != nil {
 		return err
 	}
@@ -122,19 +140,46 @@ func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, com
 	if i.LatestCommentBody == c {
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))
 	}
-	return r.github.AddComment(ctx, i.Number, c, mentions)
+
+	fm := []string{}
+	for _, m := range mentions {
+		if !strings.HasPrefix(m, "@") {
+			m = fmt.Sprintf("@%s", m)
+		}
+		fm = append(fm, m)
+	}
+	if len(fm) > 0 {
+		c = fmt.Sprintf("%s %s", strings.Join(fm, " "), c)
+	}
+	if err := r.github.AddComment(ctx, i.Number, c); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_ACTION_COMMENT_CREATED", c); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Runner) PerformStateAction(ctx context.Context, i *target.Target, state string) error {
 	r.log(fmt.Sprintf("Change state: %s", state))
 	switch state {
 	case "close", "closed":
-		return r.github.CloseIssue(ctx, i.Number)
+		if err := r.github.CloseIssue(ctx, i.Number); err != nil {
+			return err
+		}
+		state = "closed"
 	case "merge", "merged":
-		return r.github.MergePullRequest(ctx, i.Number)
+		if err := r.github.MergePullRequest(ctx, i.Number); err != nil {
+			return err
+		}
+		state = "merged"
 	default:
 		return fmt.Errorf("invalid state: %s", state)
 	}
+	if err := os.Setenv("GHDAG_ACTION_STATE_CHANGED", state); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, notify string) error {
@@ -142,7 +187,7 @@ func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, noti
 	if err != nil {
 		return err
 	}
-	mentions, err := env.ToSlice(os.Getenv("SLACK_MENTIONS"))
+	mentions, err := env.Split(os.Getenv("SLACK_MENTIONS"))
 	if err != nil {
 		return err
 	}
@@ -151,7 +196,27 @@ func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, noti
 		return err
 	}
 	r.log(fmt.Sprintf("Send notification: %s", n))
-	return r.slack.PostMessage(ctx, n, mentions)
+	if os.Getenv("SLACK_WEBHOOK_URL") != "" && len(mentions) > 0 {
+		return errors.New("notification using webhook does not support mentions")
+	}
+	links := []string{}
+	for _, m := range mentions {
+		l, err := r.slack.GetMentionLinkByName(ctx, m)
+		if err != nil {
+			return err
+		}
+		links = append(links, l)
+	}
+	if len(links) > 0 {
+		n = fmt.Sprintf("%s %s", strings.Join(links, " "), n)
+	}
+	if err := r.slack.PostMessage(ctx, n); err != nil {
+		return err
+	}
+	if err := os.Setenv("GHDAG_ACTION_NOTIFY_SENT", n); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Runner) performNextAction(ctx context.Context, i *target.Target, t *task.Task, q chan TaskQueue, next []string) error {

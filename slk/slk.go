@@ -11,7 +11,8 @@ import (
 )
 
 type SlkClient interface {
-	PostMessage(ctx context.Context, m string, mentions []string) error
+	PostMessage(ctx context.Context, m string) error
+	GetMentionLinkByName(ctx context.Context, name string) (string, error)
 }
 
 type Client struct {
@@ -33,20 +34,17 @@ func NewClient() (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) PostMessage(ctx context.Context, m string, mentions []string) error {
+func (c *Client) PostMessage(ctx context.Context, m string) error {
 	switch {
 	case c.client != nil:
-		return c.postMessage(ctx, m, mentions)
+		return c.postMessage(ctx, m)
 	case os.Getenv("SLACK_API_TOKEN") != "":
 		// temporary
 		c.client = slack.New(os.Getenv("SLACK_API_TOKEN"))
-		err := c.postMessage(ctx, m, mentions)
+		err := c.postMessage(ctx, m)
 		c.client = nil
 		return err
 	case os.Getenv("SLACK_WEBHOOK_URL") != "":
-		if len(mentions) > 0 {
-			return errors.New("notification using webhook does not support mentions")
-		}
 		return c.postWebbookMessage(ctx, m)
 	default:
 		return errors.New("not found environment for Slack: SLACK_API_TOKEN or SLACK_WEBHOOK_URL")
@@ -54,7 +52,7 @@ func (c *Client) PostMessage(ctx context.Context, m string, mentions []string) e
 	return nil
 }
 
-func (c *Client) postMessage(ctx context.Context, m string, mentions []string) error {
+func (c *Client) postMessage(ctx context.Context, m string) error {
 	if os.Getenv("SLACK_CHANNEL") == "" {
 		return errors.New("not found environment for Slack: SLACK_CHANNEL")
 	}
@@ -63,18 +61,6 @@ func (c *Client) postMessage(ctx context.Context, m string, mentions []string) e
 	if err != nil {
 		return err
 	}
-	links := []string{}
-	for _, mention := range mentions {
-		l, err := c.getMentionLinkByName(ctx, mention)
-		if err != nil {
-			return err
-		}
-		links = append(links, l)
-	}
-	if len(links) > 0 {
-		m = fmt.Sprintf("%s %s", strings.Join(links, " "), m)
-	}
-
 	opts := []slack.MsgOption{
 		slack.MsgOptionBlocks(buildBlocks(m)...),
 	}
@@ -142,7 +128,7 @@ L:
 	return cID, nil
 }
 
-func (c *Client) getMentionLinkByName(ctx context.Context, name string) (string, error) {
+func (c *Client) GetMentionLinkByName(ctx context.Context, name string) (string, error) {
 	name = strings.TrimPrefix(name, "@")
 	switch name {
 	case "channel", "here", "everyone":
