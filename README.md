@@ -367,6 +367,8 @@ tasks:
 | `SLACK_USERNAME` | Custom `username` of slack message. Require `chat:write.customize` scope. | |
 | `SLACK_ICON_EMOJI` | Custom `icon_emoji` of slack message. Require `chat:write.customize` scope. | |
 | `SLACK_ICON_URL` | Custom `icon_url` of slack message. Require `chat:write.customize` scope. | |
+| `GITHUB_ASSIGNEES` | Additional Assignees to the list in the `assignees:` section | - |
+| `GITHUB_REVIEWERS` | Additional Reviewers to the list in the `reviewers:` section | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 

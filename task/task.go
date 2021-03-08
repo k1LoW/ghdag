@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/k1LoW/ghdag/env"
 )
@@ -79,10 +80,12 @@ func (t *Task) CheckActionSyntax(a *Action) (bool, []string) {
 	if len(a.Labels) > 0 {
 		c++
 	}
-	if len(a.Assignees) > 0 {
+	as, _ := t.Env["GITHUB_ASSIGNEES"]
+	if len(a.Assignees) > 0 || (a.Assignees != nil && as != "") || (a.Assignees != nil && os.Getenv("GITHUB_ASSIGNEES") != "") {
 		c++
 	}
-	if len(a.Reviewers) > 0 {
+	rs, _ := t.Env["GITHUB_REVIEWERS"]
+	if len(a.Reviewers) > 0 || (a.Reviewers != nil && rs != "") || (a.Reviewers != nil && os.Getenv("GITHUB_REVIEWERS") != "") {
 		c++
 	}
 	if a.Comment != "" {
