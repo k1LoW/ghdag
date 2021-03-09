@@ -423,6 +423,7 @@ func TestSetReviewersAndNotify(t *testing.T) {
 		enableSameSeed bool
 	}{
 		{false, true},
+		{true, true},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -440,10 +441,13 @@ func TestSetReviewersAndNotify(t *testing.T) {
 			t.Fatal(err)
 		}
 		users := []string{}
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 10; i++ {
 			users = append(users, fmt.Sprintf("user%d", i))
 		}
-		sample := rand.Intn(100)
+		if tt.authorExist {
+			i.Author = users[rand.Intn(len(users)-1)]
+		}
+		sample := rand.Intn(10)
 		if err := os.Setenv("GITHUB_REVIEWERS_SAMPLE", fmt.Sprintf("%d", sample)); err != nil {
 			t.Fatal(err)
 		}
