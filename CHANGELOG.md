@@ -1,3 +1,9 @@
+## [v0.6.0](https://github.com/k1LoW/ghdag/compare/v0.5.0...v0.6.0) (2021-03-09)
+
+* Propagating seed and excludeKey between caller and callee [#37](https://github.com/k1LoW/ghdag/pull/37) ([k1LoW](https://github.com/k1LoW))
+* Set result of action environment variables [#36](https://github.com/k1LoW/ghdag/pull/36) ([k1LoW](https://github.com/k1LoW))
+* Assign assignees/reviewers from environment variables [#35](https://github.com/k1LoW/ghdag/pull/35) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.5.0](https://github.com/k1LoW/ghdag/compare/v0.4.0...v0.5.0) (2021-03-08)
 
 * Refactor runner.Runner [#34](https://github.com/k1LoW/ghdag/pull/34) ([k1LoW](https://github.com/k1LoW))
