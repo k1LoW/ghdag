@@ -440,14 +440,15 @@ func TestSetReviewersAndNotify(t *testing.T) {
 		if err := os.Setenv("SLACK_API_TOKEN", "dummy"); err != nil {
 			t.Fatal(err)
 		}
+		c := 10
 		users := []string{}
-		for i := 0; i < 10; i++ {
+		for i := 0; i < c; i++ {
 			users = append(users, fmt.Sprintf("user%d", i))
 		}
 		if tt.authorExist {
 			i.Author = users[rand.Intn(len(users)-1)]
 		}
-		sample := rand.Intn(10)
+		sample := rand.Intn(c-2) + 2
 		if err := os.Setenv("GITHUB_REVIEWERS_SAMPLE", fmt.Sprintf("%d", sample)); err != nil {
 			t.Fatal(err)
 		}
