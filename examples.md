@@ -179,3 +179,59 @@ jobs:
 ```
 
 </details>
+
+## Slack Notification with Mentions in sync with GitHub assignees
+
+``` yaml
+# myworkflow.yml
+---
+tasks:
+  -
+    id: assign-issue
+    if: 'is_issue && len(assignees) == 0'
+    do:
+      assignees: [alice bob charlie]
+    ok:
+      next: [notify-assignees]
+    env:
+      GITHUB_ASSIGNEES_SAMPLE: 1
+  -
+    id: notify-assignees
+    do:
+      notify: You are assigned
+    env:
+      SLACK_MENTIONS: alice_liddel bob_marly charlie_sheen
+      SLACK_MENTIONS_SAMPLE: 1
+      GHDAG_SAMPLE_WITH_SAME_SEED: true
+```
+
+<details>
+
+<summary>GitHub Actions workflow YAML file</summary>
+
+``` yaml
+# .github/workflows/ghdag_workflow.yml
+name: ghdag workflow
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  run-workflow:
+    name: 'Run workflow for A **single** `opened` issue that triggered the event'
+    runs-on: ubuntu-latest
+    container: ghcr.io/k1low/ghdag:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run ghdag
+        run: ghdag run myworkflow.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+</details>
