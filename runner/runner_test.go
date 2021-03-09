@@ -52,10 +52,11 @@ func TestSampleByEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tt := range tests {
+		r.initSeed()
 		in := []string{"alice", "bob", "charlie"}
 		envKey := "TEST_SAMPLE_BY_ENV"
 		os.Setenv(envKey, fmt.Sprintf("%d", tt.env))
-		got, err := r.sampleByEnv(in, envKey)
+		got, err := r.sample(in, envKey)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,11 +89,14 @@ func TestSampleByEnvWithSameSeed(t *testing.T) {
 		envKey := "TEST_SAMPLE_BY_ENV"
 		os.Setenv(envKey, "99")
 
-		got, err := r.sampleByEnv(a, envKey)
+		r.initSeed()
+		got, err := r.sample(a, envKey)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got2, err := r.sampleByEnv(b, envKey)
+
+		r.initSeed()
+		got2, err := r.sample(b, envKey)
 		if err != nil {
 			t.Fatal(err)
 		}
