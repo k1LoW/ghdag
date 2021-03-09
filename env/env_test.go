@@ -39,7 +39,7 @@ func TestSetenv(t *testing.T) {
 				"TOKEN": "abcdef",
 			},
 			Env{
-				"GHDAG_TOKEN": "zzz${ TOKEN }zzz",
+				"GHDAG_TOKEN": "zzz${TOKEN}zzz",
 			},
 			map[string]string{
 				"TOKEN":       "abcdef",
@@ -56,7 +56,7 @@ func TestSetenv(t *testing.T) {
 
 		tt.in.Setenv()
 
-		after := EnvMap()
+		after := envMap()
 
 		if len(after) != len(tt.want) {
 			t.Errorf("got %v\nwant %v", len(after), len(tt.want))
@@ -109,4 +109,21 @@ func clearEnv() {
 		splitted := strings.Split(e, "=")
 		os.Unsetenv(splitted[0])
 	}
+}
+
+func envMap() map[string]string {
+	m := map[string]string{}
+	for _, kv := range os.Environ() {
+		if !strings.Contains(kv, "=") {
+			continue
+		}
+		parts := strings.SplitN(kv, "=", 2)
+		k := parts[0]
+		if len(parts) < 2 {
+			m[k] = ""
+			continue
+		}
+		m[k] = parts[1]
+	}
+	return m
 }
