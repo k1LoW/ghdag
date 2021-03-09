@@ -124,9 +124,20 @@ func (r *Runner) Run(ctx context.Context) error {
 				return err
 			}
 
-			dump := tq.target.Dump()
+			variables := map[string]interface{}{}
+			for _, k := range propagatableEnv {
+				v := os.Getenv(k)
+				key := strings.ToLower(strings.Replace(k, "GHDAG_", "CALLER_", 1))
+				if strings.Contains(k, "S_") {
+					a, _ := env.Split(v)
+					variables[key] = a
+				} else {
+					variables[key] = v
+				}
+			}
+			variables = merge(variables, tq.target.Dump())
 			if tq.task.If != "" {
-				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), dump)
+				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), variables)
 				if err != nil {
 					r.errlog(fmt.Sprintf("%s", err))
 					return nil
@@ -420,6 +431,7 @@ func contains(s []string, e string) bool {
 	}
 	return false
 }
+
 func unset(s []string, i int) []string {
 	if i >= len(s) {
 		return s
@@ -434,6 +446,16 @@ func exclude(s []string, e string) []string {
 			continue
 		}
 		o = append(o, v)
+	}
+	return o
+}
+
+func merge(ms ...map[string]interface{}) map[string]interface{} {
+	o := map[string]interface{}{}
+	for _, m := range ms {
+		for k, v := range m {
+			o[k] = v
+		}
 	}
 	return o
 }
