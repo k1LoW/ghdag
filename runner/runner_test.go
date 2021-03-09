@@ -74,10 +74,15 @@ func TestSampleByEnvWithSameSeed(t *testing.T) {
 		{false, true},
 		{true, false},
 	}
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, tt := range tests {
-		os.Setenv("GHDAG_SAMPLE_WITH_SAME_SEED", fmt.Sprintf("%t", tt.enable))
-		r, err := New(nil)
-		if err != nil {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_SAMPLE_WITH_SAME_SEED", fmt.Sprintf("%t", tt.enable)); err != nil {
 			t.Fatal(err)
 		}
 		a := []string{}

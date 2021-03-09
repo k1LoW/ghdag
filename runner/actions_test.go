@@ -3,7 +3,10 @@ package runner
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/rand"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/bxcodec/faker/v3"
@@ -357,12 +360,15 @@ func TestPerformNotifyAction(t *testing.T) {
 	r.slack = m
 
 	tests := []struct {
-		in          string
-		mentionsEnv string
-		want        string
-		wantErr     interface{}
+		in           string
+		mentionsEnv  string
+		want         string
+		wantMentions []string
+		wantErr      interface{}
 	}{
-		{"hello", "", "hello", nil},
+		{"hello", "", "hello", []string{}, nil},
+		{"hello", "alice", "<UALICE> hello", []string{"alice"}, nil},
+		{"hello", "alice bob", "<UALICE> <UBOB> hello", []string{"alice", "bob"}, nil},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -381,12 +387,95 @@ func TestPerformNotifyAction(t *testing.T) {
 		}
 		if tt.wantErr == nil {
 			m.EXPECT().PostMessage(gomock.Eq(ctx), gomock.Eq(tt.want)).Return(nil)
+			for _, mention := range tt.wantMentions {
+				m.EXPECT().GetMentionLinkByName(gomock.Eq(ctx), gomock.Eq(mention)).Return(fmt.Sprintf("<U%s>", strings.ToUpper(mention)), nil)
+			}
 		}
 		if err := r.PerformNotifyAction(ctx, i, tt.in); err != nil {
 			t.Error(err)
 		}
 		if got := os.Getenv("GHDAG_ACTION_NOTIFY_SENT"); got != tt.want {
 			t.Errorf("got %v\nwant %v", got, tt.want)
+		}
+	}
+}
+
+func TestSetReviewersAndNotify(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	mg := mock.NewMockGhClient(ctrl)
+	ms := mock.NewMockSlkClient(ctrl)
+	r.github = mg
+	r.slack = ms
+
+	tests := []struct {
+		authorExist    bool
+		enableSameSeed bool
+	}{
+		{false, true},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_SAMPLE_WITH_SAME_SEED", fmt.Sprintf("%t", tt.enableSameSeed)); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("SLACK_API_TOKEN", "dummy"); err != nil {
+			t.Fatal(err)
+		}
+		users := []string{}
+		for i := 0; i < 100; i++ {
+			users = append(users, fmt.Sprintf("user%d", i))
+		}
+		sample := rand.Intn(100)
+		if err := os.Setenv("GITHUB_REVIEWERS_SAMPLE", fmt.Sprintf("%d", sample)); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("SLACK_MENTIONS", env.Join(users)); err != nil {
+			t.Fatal(err)
+		}
+
+		mg.EXPECT().SetReviewers(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Any()).Return(nil)
+		r.initSeed()
+		if err := r.PerformReviewersAction(ctx, i, users); err != nil {
+			t.Errorf("got %v", err)
+		}
+
+		want, err := env.Split(os.Getenv("GHDAG_ACTION_REVIEWERS_UPDATED"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if sample != len(want) {
+			t.Errorf("got %v\nwant %v", sample, len(want))
+		}
+
+		if err := os.Setenv("SLACK_MENTIONS_SAMPLE", fmt.Sprintf("%d", sample)); err != nil {
+			t.Fatal(err)
+		}
+		ms.EXPECT().PostMessage(gomock.Eq(ctx), gomock.Any()).Return(nil)
+		for _, mu := range want {
+			ms.EXPECT().GetMentionLinkByName(gomock.Eq(ctx), gomock.Eq(mu)).Return("<UTEST>", nil)
+		}
+		r.initSeed()
+		if err := r.PerformNotifyAction(ctx, i, "Hello"); err != nil {
+			t.Errorf("got %v", err)
 		}
 	}
 }
