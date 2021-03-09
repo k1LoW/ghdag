@@ -200,6 +200,9 @@ tasks:
     do:
       notify: You are assigned
     env:
+      SLACK_CHANNEL: operation
+      SLACK_ICON_EMOJI: white_check_mark
+      SLACK_USERNAME: assign-bot
       SLACK_MENTIONS: alice_liddel bob_marly charlie_sheen
       SLACK_MENTIONS_SAMPLE: 1
       GHDAG_SAMPLE_WITH_SAME_SEED: true
@@ -232,6 +235,7 @@ jobs:
         run: ghdag run myworkflow.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
 ```
 
 </details>
