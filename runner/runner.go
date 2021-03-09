@@ -56,6 +56,7 @@ type TaskQueue struct {
 	callerTask       *task.Task
 	callerSeed       int64
 	callerExcludeKey int
+	callerEnv        env.Env
 }
 
 func (r *Runner) Run(ctx context.Context) error {
@@ -306,6 +307,11 @@ func (r *Runner) initTaskEnv(tq TaskQueue) error {
 	}
 	if err := tq.task.Env.Setenv(); err != nil {
 		return err
+	}
+	if tq.called {
+		if err := tq.callerEnv.Setenv(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

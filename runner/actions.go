@@ -221,8 +221,28 @@ func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, noti
 	return nil
 }
 
+var propagatableEnv = []string{
+	"GHDAG_ACTION_RUN_STDOUT",
+	"GHDAG_ACTION_RUN_STDERR",
+	"GHDAG_ACTION_LABELS_UPDATED",
+	"GHDAG_ACTION_ASSIGNEES_UPDATED",
+	"GHDAG_ACTION_REVIEWERS_UPDATED",
+	"GHDAG_ACTION_COMMENT_CREATED",
+	"GHDAG_ACTION_STATE_CHANGED",
+	"GHDAG_ACTION_NOTIFY_SENT",
+	"GHDAG_ACTION_DO_ERROR",
+}
+
 func (r *Runner) performNextAction(ctx context.Context, i *target.Target, t *task.Task, q chan TaskQueue, next []string) error {
 	r.log(fmt.Sprintf("Call next task: %s", strings.Join(next, ", ")))
+
+	callerEnv := env.Env{}
+	for _, k := range propagatableEnv {
+		if v, ok := os.LookupEnv(k); ok {
+			callerEnv[k] = v
+		}
+	}
+
 	for _, id := range next {
 		nt, err := r.config.Tasks.Find(id)
 		if err != nil {
@@ -235,6 +255,7 @@ func (r *Runner) performNextAction(ctx context.Context, i *target.Target, t *tas
 			callerTask:       t,
 			callerSeed:       r.seed,
 			callerExcludeKey: r.excludeKey,
+			callerEnv:        callerEnv,
 		}
 	}
 	return nil
