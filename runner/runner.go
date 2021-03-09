@@ -27,32 +27,35 @@ import (
 )
 
 type Runner struct {
-	config    *config.Config
-	github    gh.GhClient
-	slack     slk.SlkClient
-	envCache  []string
-	mu        sync.Mutex
-	logPrefix string
-	seed      int64
+	config     *config.Config
+	github     gh.GhClient
+	slack      slk.SlkClient
+	envCache   []string
+	mu         sync.Mutex
+	logPrefix  string
+	seed       int64
+	excludeKey int
 }
 
 func New(c *config.Config) (*Runner, error) {
 	return &Runner{
-		config:    c,
-		github:    nil,
-		slack:     nil,
-		envCache:  os.Environ(),
-		logPrefix: "",
-		seed:      time.Now().UnixNano(),
+		config:     c,
+		github:     nil,
+		slack:      nil,
+		envCache:   os.Environ(),
+		logPrefix:  "",
+		seed:       time.Now().UnixNano(),
+		excludeKey: -1,
 	}, nil
 }
 
 type TaskQueue struct {
-	target     *target.Target
-	task       *task.Task
-	called     bool
-	callerTask *task.Task
-	callerSeed int64
+	target           *target.Target
+	task             *task.Task
+	called           bool
+	callerTask       *task.Task
+	callerSeed       int64
+	callerExcludeKey int
 }
 
 func (r *Runner) Run(ctx context.Context) error {
@@ -116,46 +119,11 @@ func (r *Runner) Run(ctx context.Context) error {
 			id := tq.task.Id
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] ", maxDigits, maxLength), n, id)
 
-			dump := tq.target.Dump()
-			for k, v := range dump {
-				ek := strings.ToUpper(fmt.Sprintf("GHDAG_TARGET_%s", k))
-				switch v := v.(type) {
-				case bool:
-					ev := "true"
-					if !v {
-						ev = "false"
-					}
-					if err := os.Setenv(ek, ev); err != nil {
-						return err
-					}
-				case float64:
-					if err := os.Setenv(ek, fmt.Sprintf("%g", v)); err != nil {
-						return err
-					}
-				case string:
-					if err := os.Setenv(ek, v); err != nil {
-						return err
-					}
-				case []interface{}:
-					ev := []string{}
-					for _, i := range v {
-						ev = append(ev, i.(string))
-					}
-					if err := os.Setenv(ek, strings.Join(ev, ", ")); err != nil {
-						return err
-					}
-				}
-			}
-			if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
-				return err
-			}
-			if err := r.config.Env.Setenv(); err != nil {
-				return err
-			}
-			if err := tq.task.Env.Setenv(); err != nil {
+			if err := r.initTaskEnv(tq); err != nil {
 				return err
 			}
 
+			dump := tq.target.Dump()
 			if tq.task.If != "" {
 				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), dump)
 				if err != nil {
@@ -191,12 +159,14 @@ func (r *Runner) Run(ctx context.Context) error {
 
 				// Set caller seed
 				r.seed = tq.callerSeed
+				r.excludeKey = tq.callerExcludeKey
 			}
 
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
 			if err := r.perform(ctx, tq.task.Do, tq.target, tq.task, q); err == nil {
 				r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [OK] ", maxDigits, maxLength), n, id)
 				if err := r.perform(ctx, tq.task.Ok, tq.target, tq.task, q); err != nil {
+					r.initSeed()
 					if errors.As(err, &erro.AlreadyInStateError{}) || errors.As(err, &erro.NoReviewerError{}) {
 						r.log(fmt.Sprintf("[SKIP] %s", err))
 						return nil
@@ -254,6 +224,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	if a == nil {
 		return nil
 	}
+	r.initSeed()
 
 	switch {
 	case a.Run != "":
@@ -287,6 +258,58 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 	return nil
 }
 
+func (r *Runner) initSeed() {
+	k := "GHDAG_SAMPLE_WITH_SAME_SEED"
+	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
+		r.seed = time.Now().UnixNano()
+		r.excludeKey = -1
+	}
+}
+
+func (r *Runner) initTaskEnv(tq TaskQueue) error {
+	id := tq.task.Id
+	dump := tq.target.Dump()
+	for k, v := range dump {
+		ek := strings.ToUpper(fmt.Sprintf("GHDAG_TARGET_%s", k))
+		switch v := v.(type) {
+		case bool:
+			ev := "true"
+			if !v {
+				ev = "false"
+			}
+			if err := os.Setenv(ek, ev); err != nil {
+				return err
+			}
+		case float64:
+			if err := os.Setenv(ek, fmt.Sprintf("%g", v)); err != nil {
+				return err
+			}
+		case string:
+			if err := os.Setenv(ek, v); err != nil {
+				return err
+			}
+		case []interface{}:
+			ev := []string{}
+			for _, i := range v {
+				ev = append(ev, i.(string))
+			}
+			if err := os.Setenv(ek, strings.Join(ev, ", ")); err != nil {
+				return err
+			}
+		}
+	}
+	if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
+		return err
+	}
+	if err := r.config.Env.Setenv(); err != nil {
+		return err
+	}
+	if err := tq.task.Env.Setenv(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 	en := os.Getenv("GITHUB_EVENT_NAME")
 	ep := os.Getenv("GITHUB_EVENT_PATH")
@@ -309,7 +332,20 @@ func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 	return r.github.FetchTargets(ctx)
 }
 
-func (r *Runner) sampleByEnv(in []string, envKey string) ([]string, error) {
+func (r *Runner) setExcludeKey(in []string, exclude string) error {
+	for k, v := range in {
+		if v == exclude {
+			r.excludeKey = k
+			return nil
+		}
+	}
+	return fmt.Errorf("not found key: %s", exclude)
+}
+
+func (r *Runner) sample(in []string, envKey string) ([]string, error) {
+	if r.excludeKey >= 0 {
+		in = unset(in, r.excludeKey)
+	}
 	if os.Getenv(envKey) == "" {
 		return in, nil
 	}
@@ -318,14 +354,9 @@ func (r *Runner) sampleByEnv(in []string, envKey string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if len(in) > sn {
-		seed := r.seed
-		k := "GHDAG_SAMPLE_WITH_SAME_SEED"
-		if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
-			seed = time.Now().UnixNano()
-			r.seed = seed
-		}
-		rand.Seed(seed)
+		rand.Seed(r.seed)
 		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
 		in = in[:sn]
 	}
@@ -382,6 +413,12 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+func unset(s []string, i int) []string {
+	if i >= len(s) {
+		return s
+	}
+	return append(s[:i], s[i+1:]...)
 }
 
 func exclude(s []string, e string) []string {

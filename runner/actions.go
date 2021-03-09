@@ -60,7 +60,7 @@ func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, a
 		return err
 	}
 	sortStringSlice(i.Assignees)
-	as, err = r.sampleByEnv(as, "GITHUB_ASSIGNEES_SAMPLE")
+	as, err = r.sample(as, "GITHUB_ASSIGNEES_SAMPLE")
 	if err != nil {
 		return err
 	}
@@ -81,9 +81,11 @@ func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, a
 func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, reviewers []string) error {
 	if contains(reviewers, i.Author) {
 		r.debuglog(fmt.Sprintf("Exclude author from reviewers: %s", reviewers))
-		reviewers = exclude(reviewers, i.Author)
+		if err := r.setExcludeKey(reviewers, i.Author); err != nil {
+			return err
+		}
 	}
-	reviewers, err := r.sampleByEnv(reviewers, "GITHUB_REVIEWERS_SAMPLE")
+	reviewers, err := r.sample(reviewers, "GITHUB_REVIEWERS_SAMPLE")
 	if err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, com
 	if err != nil {
 		return err
 	}
-	mentions, err = r.sampleByEnv(mentions, "GITHUB_COMMENT_MENTIONS_SAMPLE")
+	mentions, err = r.sample(mentions, "GITHUB_COMMENT_MENTIONS_SAMPLE")
 	if err != nil {
 		return err
 	}
@@ -191,7 +193,7 @@ func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, noti
 	if err != nil {
 		return err
 	}
-	mentions, err = r.sampleByEnv(mentions, "SLACK_MENTIONS_SAMPLE")
+	mentions, err = r.sample(mentions, "SLACK_MENTIONS_SAMPLE")
 	if err != nil {
 		return err
 	}
@@ -227,11 +229,12 @@ func (r *Runner) performNextAction(ctx context.Context, i *target.Target, t *tas
 			return err
 		}
 		q <- TaskQueue{
-			target:     i,
-			task:       nt,
-			called:     true,
-			callerTask: t,
-			callerSeed: r.seed,
+			target:           i,
+			task:             nt,
+			called:           true,
+			callerTask:       t,
+			callerSeed:       r.seed,
+			callerExcludeKey: r.excludeKey,
 		}
 	}
 	return nil
