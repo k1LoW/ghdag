@@ -1,13 +1,11 @@
 package env
 
 import (
-	"bytes"
 	"encoding/csv"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
-	"text/template"
 )
 
 var (
@@ -19,13 +17,8 @@ var (
 type Env map[string]string
 
 func (e Env) Setenv() error {
-	em := EnvMap()
 	for k, v := range e {
-		parsed, err := ParseWithEnviron(v, em)
-		if err != nil {
-			return err
-		}
-		if err := os.Setenv(k, parsed); err != nil {
+		if err := os.Setenv(k, os.ExpandEnv(v)); err != nil {
 			return err
 		}
 	}
@@ -46,41 +39,6 @@ func Revert(envCache []string) error {
 		}
 	}
 	return nil
-}
-
-func ParseWithEnviron(v string, envMap map[string]string) (string, error) {
-	if !re.MatchString(v) {
-		return v, nil
-	}
-	replaced := re.ReplaceAllString(v, "{{.$1}}")
-	replaced2 := re2.ReplaceAllString(replaced, "__GHDAG__$1")
-	tmpl, err := template.New("config").Parse(replaced2)
-	if err != nil {
-		return "", err
-	}
-	buf := &bytes.Buffer{}
-	err = tmpl.Execute(buf, envMap)
-	if err != nil {
-		return "", err
-	}
-	return re3.ReplaceAllString(buf.String(), "{{$1"), nil
-}
-
-func EnvMap() map[string]string {
-	m := map[string]string{}
-	for _, kv := range os.Environ() {
-		if !strings.Contains(kv, "=") {
-			continue
-		}
-		parts := strings.SplitN(kv, "=", 2)
-		k := parts[0]
-		if len(parts) < 2 {
-			m[k] = ""
-			continue
-		}
-		m[k] = parts[1]
-	}
-	return m
 }
 
 func Split(in string) ([]string, error) {

@@ -120,10 +120,7 @@ func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, r
 }
 
 func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, comment, sig string) error {
-	c, err := env.ParseWithEnviron(comment, env.EnvMap())
-	if err != nil {
-		return err
-	}
+	c := os.ExpandEnv(comment)
 	mentions, err := env.Split(os.Getenv("GITHUB_COMMENT_MENTIONS"))
 	if err != nil {
 		return err
@@ -185,10 +182,7 @@ func (r *Runner) PerformStateAction(ctx context.Context, i *target.Target, state
 }
 
 func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, notify string) error {
-	n, err := env.ParseWithEnviron(notify, env.EnvMap())
-	if err != nil {
-		return err
-	}
+	n := os.ExpandEnv(notify)
 	mentions, err := env.Split(os.Getenv("SLACK_MENTIONS"))
 	if err != nil {
 		return err
