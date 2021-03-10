@@ -174,7 +174,7 @@ func (c *Client) GetMentionLinkByName(ctx context.Context, name string) (string,
 		return fmt.Sprintf("<!subteam^%s>", gc.ID), nil
 	}
 
-	return "", fmt.Errorf("not found user or usergroup: %s", name)
+	return fmt.Sprintf("<@%s|not found user or usergroup>", name), nil
 }
 
 func buildWebhookMessage(m string) *slack.WebhookMessage {
