@@ -124,7 +124,15 @@ func (r *Runner) Run(ctx context.Context) error {
 				return err
 			}
 
-			variables := map[string]interface{}{}
+			now := time.Now()
+			variables := map[string]interface{}{
+				"year":              now.UTC().Year(),
+				"month":             now.UTC().Month(),
+				"day":               now.UTC().Day(),
+				"hour":              now.UTC().Hour(),
+				"weekday":           int(now.UTC().Weekday()),
+				"github_event_name": os.Getenv("GITHUB_EVENT_NAME"),
+			}
 			for _, k := range propagatableEnv {
 				v := os.Getenv(k)
 				key := strings.ToLower(strings.Replace(k, "GHDAG_", "CALLER_", 1))

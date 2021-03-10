@@ -186,6 +186,8 @@ The variables available in the `if` section are as follows
 | `assignees` | `array` | Assignees of the issue (pull request) |
 | `reviewers` | `array` | Reviewers of the pull request (including code owners) |
 | `code_owners` | `array` | Code owners of the pull request |
+| `reviewers_who_approved` | `array` | Reviewers who approved the pull request (including code owners) |
+| `code_owners_who_approved` | `array` | Code owners who approved the pull request |
 | `is_issue` | `bool` | `true` if the target type of the workflow is "Issue" |
 | `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request" |
 | `is_approved` | `bool` | `true` if the pull request has received an approving review  |
@@ -206,6 +208,12 @@ The variables available in the `if` section are as follows
 | `caller_action_state_changed` | `string` | Latest caller changed state of the `state:` action |
 | `caller_action_notify_sent` | `string` | Latest caller sent message of the `notify:` action |
 | `caller_action_do_error` | `string` | Latest caller error message when `do:` action failed |
+| `year` | `int` | Year of current time (UTC) |
+| `month` | `int` | Month of current time (UTC) |
+| `day` | `int` | Day of current time (UTC) |
+| `hour` | `int` | Hour of current time (UTC) |
+| `weekday` | `int` | Weekday of current time (UTC) (Sunday = 0, ...) |
+| `github_event_name` | `string` | Event name of GitHub Actions |
 
 #### `tasks[*].env:`
 
