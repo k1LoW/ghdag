@@ -149,6 +149,14 @@ type pullRequestNode struct {
 			}
 		}
 	} `graphql:"reviewRequests(first: 100)"`
+	LatestReviews struct {
+		Nodes []struct {
+			Author struct {
+				Login githubv4.String
+			}
+			State githubv4.PullRequestReviewState
+		}
+	} `graphql:"latestReviews(first: 100)"`
 	CreatedAt githubv4.DateTime
 	UpdatedAt githubv4.DateTime
 	Labels    struct {
@@ -525,6 +533,18 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 			codeOwners = append(codeOwners, k)
 		}
 	}
+	reviewersWhoApproved := []string{}
+	codeOwnersWhoApproved := []string{}
+	for _, r := range p.LatestReviews.Nodes {
+		if r.State != githubv4.PullRequestReviewStateApproved {
+			continue
+		}
+		u := string(r.Author.Login)
+		reviewersWhoApproved = append(reviewersWhoApproved, u)
+		if contains(codeOwners, u) {
+			codeOwnersWhoApproved = append(codeOwnersWhoApproved, u)
+		}
+	}
 
 	return &target.Target{
 		Number:                      n,
@@ -536,6 +556,8 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 		Assignees:                   assignees,
 		Reviewers:                   reviewers,
 		CodeOwners:                  codeOwners,
+		ReviewersWhoApproved:        reviewersWhoApproved,
+		CodeOwnersWhoApproved:       codeOwnersWhoApproved,
 		IsIssue:                     false,
 		IsPullRequest:               true,
 		IsApproved:                  isApproved,
