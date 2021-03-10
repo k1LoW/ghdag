@@ -185,6 +185,8 @@ The variables available in the `if` section are as follows
 | `assignees` | `array` | Assignees of the issue (pull request) |
 | `reviewers` | `array` | Reviewers of the pull request (including code owners) |
 | `code_owners` | `array` | Code owners of the pull request |
+| `reviewers_who_approved` | `array` | Reviewers who approved the pull request (including code owners) |
+| `code_owners_who_approved` | `array` | Code owners who approved the pull request |
 | `is_issue` | `bool` | `true` if the target type of the workflow is "Issue" |
 | `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request" |
 | `is_approved` | `bool` | `true` if the pull request has received an approving review  |
