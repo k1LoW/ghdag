@@ -129,6 +129,12 @@ L:
 }
 
 func (c *Client) GetMentionLinkByName(ctx context.Context, name string) (string, error) {
+	if c.client == nil {
+		c.client = slack.New(os.Getenv("SLACK_API_TOKEN"))
+		defer func() {
+			c.client = nil
+		}()
+	}
 	name = strings.TrimPrefix(name, "@")
 	switch name {
 	case "channel", "here", "everyone":
@@ -168,7 +174,7 @@ func (c *Client) GetMentionLinkByName(ctx context.Context, name string) (string,
 		return fmt.Sprintf("<!subteam^%s>", gc.ID), nil
 	}
 
-	return "", fmt.Errorf("not found user or usergroup: %s", name)
+	return fmt.Sprintf("<@%s|not found user or usergroup>", name), nil
 }
 
 func buildWebhookMessage(m string) *slack.WebhookMessage {
