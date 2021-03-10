@@ -1,3 +1,7 @@
+## [v0.8.0](https://github.com/k1LoW/ghdag/compare/v0.7.1...v0.8.0) (2021-03-11)
+
+* Add `do` command to perform ghdag action as oneshot command [#40](https://github.com/k1LoW/ghdag/pull/40) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.7.1](https://github.com/k1LoW/ghdag/compare/v0.7.0...v0.7.1) (2021-03-10)
 
 * Fix: invalid memory address or nil pointer dereference when using temporary SLACK_API_TOKEN [#43](https://github.com/k1LoW/ghdag/pull/43) ([k1LoW](https://github.com/k1LoW))
