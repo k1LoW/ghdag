@@ -36,8 +36,8 @@ var number int
 // doCmd represents the do command
 var doCmd = &cobra.Command{
 	Use:   "do",
-	Short: "do ghdag action as oneshot command",
-	Long:  `do ghdag action as oneshot command.`,
+	Short: "do action",
+	Long:  `do action.`,
 }
 
 func init() {
