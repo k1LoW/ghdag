@@ -23,23 +23,24 @@ package cmd
 
 import (
 	"context"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-// doRunCmd represents the doRun command
-var doRunCmd = &cobra.Command{
-	Use:   "run [COMMAND...]",
-	Short: "execute command using `sh -c`",
-	Long:  "execute command using `sh -c`.",
+// doStateCmd represents the doState command
+var doStateCmd = &cobra.Command{
+	Use:       "state [STATE]",
+	Short:     "change state of the target issue or pull request",
+	Long:      "change state of the target issue or pull request.",
+	Args:      cobra.ExactValidArgs(1),
+	ValidArgs: []string{"close", "merge"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
-		r, _, err := initRunnerAndTask(ctx, number)
+		r, t, err := initRunnerAndTask(ctx, number)
 		if err != nil {
 			return err
 		}
-		if err := r.PerformRunAction(ctx, nil, strings.Join(args, " ")); err != nil {
+		if err := r.PerformStateAction(ctx, t, args[0]); err != nil {
 			return err
 		}
 		return nil
@@ -47,5 +48,5 @@ var doRunCmd = &cobra.Command{
 }
 
 func init() {
-	doRunCmd.Flags().IntVarP(&number, "number", "n", 0, "issue or pull request number")
+	doStateCmd.Flags().IntVarP(&number, "number", "n", 0, "issue or pull request number")
 }

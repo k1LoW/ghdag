@@ -22,6 +22,12 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
+	"errors"
+	"os"
+
+	"github.com/k1LoW/ghdag/runner"
+	"github.com/k1LoW/ghdag/target"
 	"github.com/spf13/cobra"
 )
 
@@ -37,4 +43,28 @@ var doCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(doCmd)
 	doCmd.AddCommand(doRunCmd)
+	doCmd.AddCommand(doLabelsCmd)
+	doCmd.AddCommand(doAssigneesCmd)
+	doCmd.AddCommand(doReviewersCmd)
+	doCmd.AddCommand(doCommentCmd)
+	doCmd.AddCommand(doStateCmd)
+	doCmd.AddCommand(doNotifyCmd)
+}
+
+func initRunnerAndTask(ctx context.Context, number int) (*runner.Runner, *target.Target, error) {
+	if os.Getenv("GITHUB_EVENT_NAME") == "" && number == 0 {
+		return nil, nil, errors.New("env GITHUB_EVENT_NAME is not set. --number required")
+	}
+	r, err := runner.New(nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := r.InitClients(); err != nil {
+		return nil, nil, err
+	}
+	t, err := r.FetchTarget(ctx, number)
+	if err != nil {
+		return nil, nil, err
+	}
+	return r, t, nil
 }

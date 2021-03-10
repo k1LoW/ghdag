@@ -23,23 +23,27 @@ package cmd
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
+	"github.com/k1LoW/ghdag/gh"
+	"github.com/k1LoW/ghdag/task"
 	"github.com/spf13/cobra"
 )
 
-// doRunCmd represents the doRun command
-var doRunCmd = &cobra.Command{
-	Use:   "run [COMMAND...]",
-	Short: "execute command using `sh -c`",
-	Long:  "execute command using `sh -c`.",
+// doCommentCmd represents the doComment command
+var doCommentCmd = &cobra.Command{
+	Use:   "comment [COMMENT]",
+	Short: "create the comment of the target issue or pull request",
+	Long:  "create the comment of the target issue or pull request.",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
-		r, _, err := initRunnerAndTask(ctx, number)
+		r, t, err := initRunnerAndTask(ctx, number)
 		if err != nil {
 			return err
 		}
-		if err := r.PerformRunAction(ctx, nil, strings.Join(args, " ")); err != nil {
+		sig := fmt.Sprintf("%s%s:%s -->", gh.CommentSigPrefix, "cmd-do", task.ActionTypeDo)
+		if err := r.PerformCommentAction(ctx, t, args[0], sig); err != nil {
 			return err
 		}
 		return nil
@@ -47,5 +51,5 @@ var doRunCmd = &cobra.Command{
 }
 
 func init() {
-	doRunCmd.Flags().IntVarP(&number, "number", "n", 0, "issue or pull request number")
+	doCommentCmd.Flags().IntVarP(&number, "number", "n", 0, "issue or pull request number")
 }
