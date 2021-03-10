@@ -196,6 +196,15 @@ The variables available in the `if` section are as follows
 | `number_of_comments` | `int` | Number of comments |
 | `latest_comment_author` | `string` | Author of latest comment |
 | `latest_comment_body` | `string` | Body of latest comment |
+| `caller_action_run_stdout` | `string` | Latest caller STDOUT of the `run` action |
+| `caller_action_run_stderr` | `string` | Latest caller STDERR of the `run` action |
+| `caller_action_labels_updated` | `array` | Latest caller update result of the `labels:` action |
+| `caller_action_assignees_updated` | `array` | Latest caller update result of the `assgnees:` action |
+| `caller_action_reviewers_updated` | `array` | Latest caller update result of the `reviewers:` action |
+| `caller_action_comment_created` | `string` | Latest caller created comment of the `comment:` action |
+| `caller_action_state_changed` | `string` | Latest caller changed state of the `state:` action |
+| `caller_action_notify_sent` | `string` | Latest caller sent message of the `notify:` action |
+| `caller_action_do_error` | `string` | Latest caller error message when `do:` action failed |
 
 #### `tasks[*].env:`
 
