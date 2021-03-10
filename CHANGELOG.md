@@ -1,3 +1,10 @@
+## [v0.7.0](https://github.com/k1LoW/ghdag/compare/v0.6.0...v0.7.0) (2021-03-10)
+
+* Add variables `reviewers_who_approved` `code_owners_who_approved` [#42](https://github.com/k1LoW/ghdag/pull/42) ([k1LoW](https://github.com/k1LoW))
+* Set caller result variables to `if:` section [#41](https://github.com/k1LoW/ghdag/pull/41) ([k1LoW](https://github.com/k1LoW))
+* Use os.ExpandEnv [#39](https://github.com/k1LoW/ghdag/pull/39) ([k1LoW](https://github.com/k1LoW))
+* Propagate action result environment variables to next tasks [#38](https://github.com/k1LoW/ghdag/pull/38) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.6.0](https://github.com/k1LoW/ghdag/compare/v0.5.0...v0.6.0) (2021-03-09)
 
 * Propagating seed and excludeKey between caller and callee [#37](https://github.com/k1LoW/ghdag/pull/37) ([k1LoW](https://github.com/k1LoW))
