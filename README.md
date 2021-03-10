@@ -177,6 +177,7 @@ The variables available in the `if` section are as follows
 | Variable name | Type | Description |
 | --- | --- | --- |
 | `number` | `int` | Number of the issue (pull request) |
+| `state` | `string` | State of the issue (pull request) |
 | `title` | `string` | Title of the issue (pull request) |
 | `body` | `string` | Body of the issue (pull request) |
 | `url` | `string` | URL of the issue (pull request) |

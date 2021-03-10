@@ -336,7 +336,7 @@ func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 			return nil, err
 		}
 		if state != "open" {
-			return nil, erro.NewNotOpenError(fmt.Errorf("#%d is not opened: %s", n, state))
+			return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, state))
 		}
 		r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
 		t, err := r.github.FetchTarget(ctx, n)

@@ -93,6 +93,7 @@ type issueNode struct {
 		Login githubv4.String
 	}
 	Number    githubv4.Int
+	State     githubv4.String
 	Title     githubv4.String
 	Body      githubv4.String
 	URL       githubv4.String
@@ -127,6 +128,7 @@ type pullRequestNode struct {
 		Login githubv4.String
 	}
 	Number         githubv4.Int
+	State          githubv4.String
 	Title          githubv4.String
 	Body           githubv4.String
 	URL            githubv4.String
@@ -262,10 +264,18 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	if strings.Contains(string(q.Repogitory.IssueOrPullRequest.Issue.URL), "/issues/") {
 		// Issue
 		i := q.Repogitory.IssueOrPullRequest.Issue
+		state := strings.ToLower(string(i.State))
+		if state != "open" {
+			return nil, erro.NewNotOpenError(fmt.Errorf("issue #%d is %s", int(i.Number), state))
+		}
 		return buildTargetFromIssue(i, now)
 	} else {
 		// Pull request
 		p := q.Repogitory.IssueOrPullRequest.PullRequest
+		state := strings.ToLower(string(p.State))
+		if state != "open" {
+			return nil, erro.NewNotOpenError(fmt.Errorf("pull request #%d is %s", int(p.Number), state))
+		}
 		if bool(p.IsDraft) {
 			return nil, erro.NewNotOpenError(fmt.Errorf("pull request #%d is draft", int(p.Number)))
 		}
@@ -441,6 +451,7 @@ func buildTargetFromIssue(i issueNode, now time.Time) (*target.Target, error) {
 
 	return &target.Target{
 		Number:                      n,
+		State:                       strings.ToLower(string(i.State)),
 		Title:                       string(i.Title),
 		Body:                        string(i.Body),
 		URL:                         string(i.URL),
@@ -528,6 +539,7 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 
 	return &target.Target{
 		Number:                      n,
+		State:                       string(p.State),
 		Title:                       string(p.Title),
 		Body:                        string(p.Body),
 		URL:                         string(p.URL),

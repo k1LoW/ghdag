@@ -9,6 +9,7 @@ import (
 // Target is Issue or Pull request
 type Target struct {
 	Number                      int      `json:"number"`
+	State                       string   `json:"state"`
 	Title                       string   `json:"title"`
 	Body                        string   `json:"body"`
 	URL                         string   `json:"url"`
