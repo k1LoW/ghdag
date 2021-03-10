@@ -71,7 +71,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.initClients(); err != nil {
+	if err := r.InitClients(); err != nil {
 		return err
 	}
 
@@ -214,7 +214,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runner) initClients() error {
+func (r *Runner) InitClients() error {
 	if r.github == nil {
 		gc, err := gh.NewClient()
 		if err != nil {
@@ -329,24 +329,35 @@ func (r *Runner) initTaskEnv(tq TaskQueue) error {
 
 func (r *Runner) fetchTargets(ctx context.Context) (target.Targets, error) {
 	en := os.Getenv("GITHUB_EVENT_NAME")
-	ep := os.Getenv("GITHUB_EVENT_PATH")
 	if strings.HasPrefix(en, "issue") || strings.HasPrefix(en, "pull_request") {
-		n, state, err := detectTargetNumber(ep)
+		t, err := r.FetchTarget(ctx, 0)
 		if err != nil {
 			return nil, err
 		}
-		if state != "open" {
-			return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, state))
-		}
-		r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
-		t, err := r.github.FetchTarget(ctx, n)
-		if err != nil {
-			return nil, err
-		}
-		return target.Targets{n: t}, nil
+		return target.Targets{t.Number: t}, nil
 	}
 	r.log(fmt.Sprintf("Fetch all open issues and pull requests from %s", os.Getenv("GITHUB_REPOSITORY")))
 	return r.github.FetchTargets(ctx)
+}
+
+func (r *Runner) FetchTarget(ctx context.Context, n int) (*target.Target, error) {
+	if n > 0 {
+		return r.github.FetchTarget(ctx, n)
+	}
+	en := os.Getenv("GITHUB_EVENT_NAME")
+	if !strings.HasPrefix(en, "issue") && !strings.HasPrefix(en, "pull_request") {
+		return nil, fmt.Errorf("unsupported event: %s", en)
+	}
+	ep := os.Getenv("GITHUB_EVENT_PATH")
+	n, state, err := detectTargetNumber(ep)
+	if err != nil {
+		return nil, err
+	}
+	if state != "open" {
+		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, state))
+	}
+	r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTarget(ctx, n)
 }
 
 func (r *Runner) setExcludeKey(in []string, exclude string) error {

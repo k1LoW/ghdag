@@ -22,19 +22,42 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
+	"errors"
+	"os"
+	"strings"
+
+	"github.com/k1LoW/ghdag/runner"
 	"github.com/spf13/cobra"
 )
 
-var number int
-
-// doCmd represents the do command
-var doCmd = &cobra.Command{
-	Use:   "do",
-	Short: "do ghdag action as oneshot command",
-	Long:  `do ghdag action as oneshot command.`,
+// doRunCmd represents the doRun command
+var doRunCmd = &cobra.Command{
+	Use:   "run [COMMAND...]",
+	Short: "execute command using `sh -c`",
+	Long:  "execute command using `sh -c`.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if os.Getenv("GITHUB_EVENT_NAME") == "" && number == 0 {
+			return errors.New("env GITHUB_EVENT_NAME is not set. --number required")
+		}
+		ctx := context.Background()
+		r, err := runner.New(nil)
+		if err != nil {
+			return err
+		}
+		if err := r.InitClients(); err != nil {
+			return err
+		}
+		if _, err := r.FetchTarget(ctx, number); err != nil {
+			return err
+		}
+		if err := r.PerformRunAction(ctx, nil, strings.Join(args, " ")); err != nil {
+			return err
+		}
+		return nil
+	},
 }
 
 func init() {
-	rootCmd.AddCommand(doCmd)
-	doCmd.AddCommand(doRunCmd)
+	doRunCmd.Flags().IntVarP(&number, "number", "n", 0, "issue or pull request number")
 }
