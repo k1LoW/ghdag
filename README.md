@@ -436,6 +436,18 @@ $ ghdag do labels bug question --number 54
 $
 ```
 
+``` console
+$ export GITHUB_REPOGITORY=owner/repo
+$ export GITHUB_TOKEN=XXXxxXXXXXxxXxXXXX
+$ export GITHUB_TOKEN=XXXxxXXXXXxxXxXXXX
+$ export SLACK_API_TOKEN=xoxb-XxXXXXXXXXXXxxxxxxxxxxXXXXXXXXXXXxxxxxxxxXXXXXXXX
+$ export SLACK_CHANNEL=operations
+$ export SLACK_MENTIONS=bob
+$ ghdag do notify hello
+2021-03-10T21:43:26+09:00 [INFO] Send notification: hello
+$
+```
+
 ## Install
 
 **deb:**
