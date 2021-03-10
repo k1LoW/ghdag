@@ -181,7 +181,7 @@ func (r *Runner) PerformStateAction(ctx context.Context, i *target.Target, state
 	return nil
 }
 
-func (r *Runner) PerformNotifyAction(ctx context.Context, i *target.Target, notify string) error {
+func (r *Runner) PerformNotifyAction(ctx context.Context, _ *target.Target, notify string) error {
 	n := os.ExpandEnv(notify)
 	mentions, err := env.Split(os.Getenv("SLACK_MENTIONS"))
 	if err != nil {

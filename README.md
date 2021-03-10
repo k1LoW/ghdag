@@ -177,6 +177,7 @@ The variables available in the `if` section are as follows
 | Variable name | Type | Description |
 | --- | --- | --- |
 | `number` | `int` | Number of the issue (pull request) |
+| `state` | `string` | State of the issue (pull request) |
 | `title` | `string` | Title of the issue (pull request) |
 | `body` | `string` | Body of the issue (pull request) |
 | `url` | `string` | URL of the issue (pull request) |
@@ -350,7 +351,6 @@ Call next tasks in the same session.
 **Example**
 
 ``` yaml
-``` yaml
 tasks:
   -
     id: set-question-label
@@ -401,6 +401,40 @@ tasks:
 - `users:read`
 - `usergroups:read`
 - `chat:write.customize` ( optional )
+
+## `ghdag do` commmands for performing an action one-shot
+
+``` console
+$ ghdag do --help
+do action.
+
+Usage:
+  ghdag do [command]
+
+Available Commands:
+  assignees   update the assignees of the target issue or pull request
+  comment     create the comment of the target issue or pull request
+  labels      update the labels of the target issue or pull request
+  notify      send notify message to slack channel
+  reviewers   update the reviewers of the target issue or pull request
+  run         execute command using `sh -c`
+  state       change state of the target issue or pull request
+
+Flags:
+  -h, --help   help for do
+
+Use "ghdag do [command] --help" for more information about a command.
+```
+
+**Example**
+
+``` console
+$ export GITHUB_REPOGITORY=owner/repo
+$ export GITHUB_TOKEN=XXXxxXXXXXxxXxXXXX
+$ ghdag do labels bug question --number 54
+2021-03-10T21:43:26+09:00 [INFO] Set labels: bug question
+$
+```
 
 ## Install
 
