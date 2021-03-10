@@ -129,6 +129,12 @@ L:
 }
 
 func (c *Client) GetMentionLinkByName(ctx context.Context, name string) (string, error) {
+	if c.client == nil {
+		c.client = slack.New(os.Getenv("SLACK_API_TOKEN"))
+		defer func() {
+			c.client = nil
+		}()
+	}
 	name = strings.TrimPrefix(name, "@")
 	switch name {
 	case "channel", "here", "everyone":
