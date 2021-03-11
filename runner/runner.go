@@ -99,6 +99,9 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 	}
 
+	i, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
+	eventName := os.Getenv("GITHUB_EVENT_NAME")
+
 	for {
 		if len(q) == 0 {
 			close(q)
@@ -126,12 +129,13 @@ func (r *Runner) Run(ctx context.Context) error {
 
 			now := time.Now()
 			variables := map[string]interface{}{
-				"year":              now.UTC().Year(),
-				"month":             now.UTC().Month(),
-				"day":               now.UTC().Day(),
-				"hour":              now.UTC().Hour(),
-				"weekday":           int(now.UTC().Weekday()),
-				"github_event_name": os.Getenv("GITHUB_EVENT_NAME"),
+				"year":                now.UTC().Year(),
+				"month":               now.UTC().Month(),
+				"day":                 now.UTC().Day(),
+				"hour":                now.UTC().Hour(),
+				"weekday":             int(now.UTC().Weekday()),
+				"github_event_name":   eventName,
+				"github_event_action": i.Action,
 			}
 			for _, k := range propagatableEnv {
 				v := os.Getenv(k)
@@ -422,11 +426,13 @@ type GitHubEventInfo struct {
 }
 
 func DecodeGitHubEventInfo(p string) (*GitHubEventInfo, error) {
+	i := &GitHubEventInfo{}
 	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {
-		return nil, err
+		return i, err
 	}
 	s := struct {
+		Action      string `json:"action,omitempty"`
 		PullRequest struct {
 			Number int    `json:"number,omitempty"`
 			State  string `json:"state,omitempty"`
@@ -437,9 +443,9 @@ func DecodeGitHubEventInfo(p string) (*GitHubEventInfo, error) {
 		} `json:"issue,omitempty"`
 	}{}
 	if err := json.Unmarshal(b, &s); err != nil {
-		return nil, err
+		return i, err
 	}
-	i := &GitHubEventInfo{}
+	i.Action = s.Action
 	switch {
 	case s.PullRequest.Number > 0:
 		i.Number = s.PullRequest.Number
@@ -447,8 +453,6 @@ func DecodeGitHubEventInfo(p string) (*GitHubEventInfo, error) {
 	case s.Issue.Number > 0:
 		i.Number = s.Issue.Number
 		i.State = s.Issue.State
-	default:
-		return nil, fmt.Errorf("can not parse: %s", p)
 	}
 	return i, nil
 }

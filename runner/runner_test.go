@@ -14,11 +14,12 @@ func TestDetectTargetNumber(t *testing.T) {
 		path       string
 		wantNumber int
 		wantState  string
+		wantAction string
 		wantErr    bool
 	}{
-		{"event_issue_opened.json", 19, "open", false},
-		{"event_pull_request_opened.json", 20, "open", false},
-		{"event_issue_comment_opened.json", 20, "open", false},
+		{"event_issue_opened.json", 19, "open", "opened", false},
+		{"event_pull_request_opened.json", 20, "open", "opened", false},
+		{"event_issue_comment_opened.json", 20, "open", "created", false},
 	}
 	for _, tt := range tests {
 		got, err := DecodeGitHubEventInfo(filepath.Join(testdataDir(), tt.path))
@@ -33,6 +34,9 @@ func TestDetectTargetNumber(t *testing.T) {
 		}
 		if got.State != tt.wantState {
 			t.Errorf("got %v\nwant %v", got.State, tt.wantState)
+		}
+		if got.Action != tt.wantAction {
+			t.Errorf("got %v\nwant %v", got.Action, tt.wantAction)
 		}
 	}
 }
