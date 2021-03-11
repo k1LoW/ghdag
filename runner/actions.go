@@ -43,6 +43,9 @@ func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labe
 	sortStringSlice(labels)
 	r.log(fmt.Sprintf("Set labels: %s", strings.Join(labels, ", ")))
 	if cmp.Equal(i.Labels, labels) {
+		if err := os.Setenv("GHDAG_ACTION_LABELS_UPDATED", env.Join(labels)); err != nil {
+			return err
+		}
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(labels, ", ")))
 	}
 	if err := r.github.SetLabels(ctx, i.Number, labels); err != nil {
@@ -67,6 +70,9 @@ func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, a
 	sortStringSlice(as)
 	r.log(fmt.Sprintf("Set assignees: %s", strings.Join(as, ", ")))
 	if cmp.Equal(i.Assignees, as) {
+		if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(as)); err != nil {
+			return err
+		}
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(as, ", ")))
 	}
 	if err := r.github.SetAssignees(ctx, i.Number, as); err != nil {
@@ -108,6 +114,9 @@ func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, r
 	sortStringSlice(ra)
 
 	if len(ra) == 0 || cmp.Equal(rb, ra) {
+		if err := os.Setenv("GHDAG_ACTION_REVIEWERS_UPDATED", env.Join(ra)); err != nil {
+			return err
+		}
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(reviewers, ", ")))
 	}
 	if err := r.github.SetReviewers(ctx, i.Number, ra); err != nil {
