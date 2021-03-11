@@ -39,10 +39,33 @@ func (r *Runner) PerformRunAction(ctx context.Context, _ *target.Target, command
 }
 
 func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labels []string) error {
+	b := os.Getenv("GHDAG_ACTION_LABELS_BEHAVIOR")
+	switch b {
+	case "add":
+		r.log(fmt.Sprintf("Add labels: %s", strings.Join(labels, ", ")))
+		labels = unique(append(labels, i.Labels...))
+	case "remove":
+		r.log(fmt.Sprintf("Remove labels: %s", strings.Join(labels, ", ")))
+		removed := []string{}
+		for _, l := range i.Labels {
+			if contains(labels, l) {
+				continue
+			}
+			removed = append(removed, l)
+		}
+		labels = removed
+	case "replace", "":
+		r.log(fmt.Sprintf("Replace labels: %s", strings.Join(labels, ", ")))
+	default:
+		return fmt.Errorf("invalid behavior: %s", b)
+	}
+
 	sortStringSlice(i.Labels)
 	sortStringSlice(labels)
-	r.log(fmt.Sprintf("Set labels: %s", strings.Join(labels, ", ")))
 	if cmp.Equal(i.Labels, labels) {
+		if err := os.Setenv("GHDAG_ACTION_LABELS_UPDATED", env.Join(labels)); err != nil {
+			return err
+		}
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(labels, ", ")))
 	}
 	if err := r.github.SetLabels(ctx, i.Number, labels); err != nil {
@@ -67,6 +90,9 @@ func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, a
 	sortStringSlice(as)
 	r.log(fmt.Sprintf("Set assignees: %s", strings.Join(as, ", ")))
 	if cmp.Equal(i.Assignees, as) {
+		if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(as)); err != nil {
+			return err
+		}
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(as, ", ")))
 	}
 	if err := r.github.SetAssignees(ctx, i.Number, as); err != nil {
@@ -108,6 +134,9 @@ func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, r
 	sortStringSlice(ra)
 
 	if len(ra) == 0 || cmp.Equal(rb, ra) {
+		if err := os.Setenv("GHDAG_ACTION_REVIEWERS_UPDATED", env.Join(ra)); err != nil {
+			return err
+		}
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(reviewers, ", ")))
 	}
 	if err := r.github.SetReviewers(ctx, i.Number, ra); err != nil {

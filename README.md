@@ -392,6 +392,7 @@ tasks:
 | `SLACK_ICON_URL` | Custom `icon_url` of slack message. Require `chat:write.customize` scope. | |
 | `GITHUB_ASSIGNEES` | Additional Assignees to the list in the `assignees:` action | - |
 | `GITHUB_REVIEWERS` | Additional Reviewers to the list in the `reviewers:` action | - |
+| `GHDAG_ACTION_LABELS_BEHAVIOR` | Behavior of the `labels:` action ( `replace` (=default), `add`, `remove` ) | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 

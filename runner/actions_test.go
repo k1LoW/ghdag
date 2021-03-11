@@ -77,16 +77,24 @@ func TestPerformLabelsAction(t *testing.T) {
 	r.github = m
 
 	tests := []struct {
-		in      []string
-		current []string
-		want    []string
-		wantErr interface{}
+		in       []string
+		current  []string
+		behavior string
+		want     []string
+		wantErr  interface{}
 	}{
-		{[]string{"bug", "question"}, nil, []string{"bug", "question"}, nil},
-		{[]string{"bug", "question"}, []string{"bug", "question"}, nil, &erro.AlreadyInStateError{}},
+		{[]string{"bug", "question"}, nil, "", []string{"bug", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"bug", "question"}, "", []string{"bug", "question"}, &erro.AlreadyInStateError{}},
+		{[]string{"bug", "question"}, nil, "replace", []string{"bug", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"help wanted"}, "replace", []string{"bug", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"help wanted"}, "add", []string{"bug", "help wanted", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"bug", "help wanted"}, "remove", []string{"help wanted"}, nil},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_ACTION_LABELS_BEHAVIOR", tt.behavior); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -137,7 +145,7 @@ func TestPerformAssigneesAction(t *testing.T) {
 		wantErr interface{}
 	}{
 		{[]string{"alice", "bob"}, nil, []string{"alice", "bob"}, nil},
-		{[]string{"alice", "bob"}, []string{"alice", "bob"}, nil, &erro.AlreadyInStateError{}},
+		{[]string{"alice", "bob"}, []string{"alice", "bob"}, []string{"alice", "bob"}, &erro.AlreadyInStateError{}},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -192,7 +200,7 @@ func TestPerformReviewersAction(t *testing.T) {
 		wantErr           interface{}
 	}{
 		{[]string{"alice", "bob"}, "", nil, nil, []string{"alice", "bob"}, nil},
-		{[]string{"alice", "bob"}, "", []string{"alice", "bob"}, nil, nil, &erro.AlreadyInStateError{}},
+		{[]string{"alice", "bob"}, "", []string{"alice", "bob"}, nil, []string{"alice", "bob"}, &erro.AlreadyInStateError{}},
 		{[]string{"alice", "bob"}, "", []string{"alice"}, nil, []string{"alice", "bob"}, nil},
 		{[]string{"alice", "bob"}, "", []string{}, []string{"bob"}, []string{"alice"}, nil},
 		{[]string{"alice", "bob"}, "alice", nil, nil, []string{"bob"}, nil},
