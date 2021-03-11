@@ -99,6 +99,9 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 	}
 
+	i, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
+	eventName := os.Getenv("GITHUB_EVENT_NAME")
+
 	for {
 		if len(q) == 0 {
 			close(q)
@@ -126,12 +129,13 @@ func (r *Runner) Run(ctx context.Context) error {
 
 			now := time.Now()
 			variables := map[string]interface{}{
-				"year":              now.UTC().Year(),
-				"month":             now.UTC().Month(),
-				"day":               now.UTC().Day(),
-				"hour":              now.UTC().Hour(),
-				"weekday":           int(now.UTC().Weekday()),
-				"github_event_name": os.Getenv("GITHUB_EVENT_NAME"),
+				"year":                now.UTC().Year(),
+				"month":               now.UTC().Month(),
+				"day":                 now.UTC().Day(),
+				"hour":                now.UTC().Hour(),
+				"weekday":             int(now.UTC().Weekday()),
+				"github_event_name":   eventName,
+				"github_event_action": i.Action,
 			}
 			for _, k := range propagatableEnv {
 				v := os.Getenv(k)
@@ -357,15 +361,15 @@ func (r *Runner) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		return nil, fmt.Errorf("unsupported event: %s", en)
 	}
 	ep := os.Getenv("GITHUB_EVENT_PATH")
-	n, state, err := detectTargetNumber(ep)
+	i, err := DecodeGitHubEventInfo(ep)
 	if err != nil {
 		return nil, err
 	}
-	if state != "open" {
-		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, state))
+	if i.State != "open" {
+		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, i.State))
 	}
-	r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
-	return r.github.FetchTarget(ctx, n)
+	r.log(fmt.Sprintf("Fetch #%d from %s", i.Number, os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTarget(ctx, i.Number)
 }
 
 func (r *Runner) setExcludeKey(in []string, exclude string) error {
@@ -415,12 +419,20 @@ func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
 }
 
-func detectTargetNumber(p string) (int, string, error) {
+type GitHubEventInfo struct {
+	Action string
+	Number int
+	State  string
+}
+
+func DecodeGitHubEventInfo(p string) (*GitHubEventInfo, error) {
+	i := &GitHubEventInfo{}
 	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {
-		return 0, "", err
+		return i, err
 	}
 	s := struct {
+		Action      string `json:"action,omitempty"`
 		PullRequest struct {
 			Number int    `json:"number,omitempty"`
 			State  string `json:"state,omitempty"`
@@ -431,15 +443,18 @@ func detectTargetNumber(p string) (int, string, error) {
 		} `json:"issue,omitempty"`
 	}{}
 	if err := json.Unmarshal(b, &s); err != nil {
-		return 0, "", err
+		return i, err
 	}
+	i.Action = s.Action
 	switch {
 	case s.PullRequest.Number > 0:
-		return s.PullRequest.Number, s.PullRequest.State, nil
+		i.Number = s.PullRequest.Number
+		i.State = s.PullRequest.State
 	case s.Issue.Number > 0:
-		return s.Issue.Number, s.Issue.State, nil
+		i.Number = s.Issue.Number
+		i.State = s.Issue.State
 	}
-	return 0, "", fmt.Errorf("can not parse: %s", p)
+	return i, nil
 }
 
 func unique(in []string) []string {
