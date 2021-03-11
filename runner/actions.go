@@ -39,9 +39,29 @@ func (r *Runner) PerformRunAction(ctx context.Context, _ *target.Target, command
 }
 
 func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labels []string) error {
+	b := os.Getenv("GHDAG_ACTION_LABELS_BEHAVIOR")
+	switch b {
+	case "add":
+		r.log(fmt.Sprintf("Add labels: %s", strings.Join(labels, ", ")))
+		labels = unique(append(labels, i.Labels...))
+	case "remove":
+		r.log(fmt.Sprintf("Remove labels: %s", strings.Join(labels, ", ")))
+		removed := []string{}
+		for _, l := range i.Labels {
+			if contains(labels, l) {
+				continue
+			}
+			removed = append(removed, l)
+		}
+		labels = removed
+	case "replace", "":
+		r.log(fmt.Sprintf("Replace labels: %s", strings.Join(labels, ", ")))
+	default:
+		return fmt.Errorf("invalid behavior: %s", b)
+	}
+
 	sortStringSlice(i.Labels)
 	sortStringSlice(labels)
-	r.log(fmt.Sprintf("Set labels: %s", strings.Join(labels, ", ")))
 	if cmp.Equal(i.Labels, labels) {
 		if err := os.Setenv("GHDAG_ACTION_LABELS_UPDATED", env.Join(labels)); err != nil {
 			return err

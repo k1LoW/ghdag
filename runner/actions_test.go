@@ -87,13 +87,14 @@ func TestPerformLabelsAction(t *testing.T) {
 		{[]string{"bug", "question"}, []string{"bug", "question"}, "", []string{"bug", "question"}, &erro.AlreadyInStateError{}},
 		{[]string{"bug", "question"}, nil, "replace", []string{"bug", "question"}, nil},
 		{[]string{"bug", "question"}, []string{"help wanted"}, "replace", []string{"bug", "question"}, nil},
-		// {[]string{"bug", "question"}, []string{"help wanted"}, "add", []string{"help wanted", "bug", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"help wanted"}, "add", []string{"bug", "help wanted", "question"}, nil},
+		{[]string{"bug", "question"}, []string{"bug", "help wanted"}, "remove", []string{"help wanted"}, nil},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.Setenv("GHDAG_ACTIONS_LABELS_BEHAVIOR", tt.behavior); err != nil {
+		if err := os.Setenv("GHDAG_ACTION_LABELS_BEHAVIOR", tt.behavior); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()

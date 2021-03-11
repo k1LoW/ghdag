@@ -442,6 +442,18 @@ func detectTargetNumber(p string) (int, string, error) {
 	return 0, "", fmt.Errorf("can not parse: %s", p)
 }
 
+func unique(in []string) []string {
+	m := map[string]struct{}{}
+	for _, s := range in {
+		m[s] = struct{}{}
+	}
+	u := []string{}
+	for s := range m {
+		u = append(u, s)
+	}
+	return u
+}
+
 func contains(s []string, e string) bool {
 	for _, v := range s {
 		if e == v {
