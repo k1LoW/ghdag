@@ -1,3 +1,8 @@
+## [v0.9.0](https://github.com/k1LoW/ghdag/compare/v0.8.0...v0.9.0) (2021-03-11)
+
+* Add variable `github_event_action` [#45](https://github.com/k1LoW/ghdag/pull/45) ([k1LoW](https://github.com/k1LoW))
+* Add `GHDAG_ACTION_LABELS_BEHAVIOR` to set behavior of the `labels:` action [#44](https://github.com/k1LoW/ghdag/pull/44) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.8.0](https://github.com/k1LoW/ghdag/compare/v0.7.1...v0.8.0) (2021-03-11)
 
 * Add `do` command to perform ghdag action as oneshot command [#40](https://github.com/k1LoW/ghdag/pull/40) ([k1LoW](https://github.com/k1LoW))
