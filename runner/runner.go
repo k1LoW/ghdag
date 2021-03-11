@@ -99,7 +99,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 	}
 
-	i, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
+	eventInfo, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
 	eventName := os.Getenv("GITHUB_EVENT_NAME")
 
 	for {
@@ -135,15 +135,16 @@ func (r *Runner) Run(ctx context.Context) error {
 				"hour":                now.UTC().Hour(),
 				"weekday":             int(now.UTC().Weekday()),
 				"github_event_name":   eventName,
-				"github_event_action": i.Action,
+				"github_event_action": eventInfo.Action,
 			}
 			for _, k := range propagatableEnv {
 				v := os.Getenv(k)
 				key := strings.ToLower(strings.Replace(k, "GHDAG_", "CALLER_", 1))
-				if strings.Contains(k, "S_") {
+				switch k {
+				case "GHDAG_ACTION_LABELS_UPDATED", "GHDAG_ACTION_ASSIGNEES_UPDATED", "GHDAG_ACTION_REVIEWERS_UPDATED":
 					a, _ := env.Split(v)
 					variables[key] = a
-				} else {
+				default:
 					variables[key] = v
 				}
 			}
