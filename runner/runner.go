@@ -357,15 +357,15 @@ func (r *Runner) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		return nil, fmt.Errorf("unsupported event: %s", en)
 	}
 	ep := os.Getenv("GITHUB_EVENT_PATH")
-	n, state, err := detectTargetNumber(ep)
+	i, err := DecodeGitHubEventInfo(ep)
 	if err != nil {
 		return nil, err
 	}
-	if state != "open" {
-		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, state))
+	if i.State != "open" {
+		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, i.State))
 	}
-	r.log(fmt.Sprintf("Fetch #%d from %s", n, os.Getenv("GITHUB_REPOSITORY")))
-	return r.github.FetchTarget(ctx, n)
+	r.log(fmt.Sprintf("Fetch #%d from %s", i.Number, os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTarget(ctx, i.Number)
 }
 
 func (r *Runner) setExcludeKey(in []string, exclude string) error {
@@ -415,10 +415,16 @@ func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
 }
 
-func detectTargetNumber(p string) (int, string, error) {
+type GitHubEventInfo struct {
+	Action string
+	Number int
+	State  string
+}
+
+func DecodeGitHubEventInfo(p string) (*GitHubEventInfo, error) {
 	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {
-		return 0, "", err
+		return nil, err
 	}
 	s := struct {
 		PullRequest struct {
@@ -431,15 +437,20 @@ func detectTargetNumber(p string) (int, string, error) {
 		} `json:"issue,omitempty"`
 	}{}
 	if err := json.Unmarshal(b, &s); err != nil {
-		return 0, "", err
+		return nil, err
 	}
+	i := &GitHubEventInfo{}
 	switch {
 	case s.PullRequest.Number > 0:
-		return s.PullRequest.Number, s.PullRequest.State, nil
+		i.Number = s.PullRequest.Number
+		i.State = s.PullRequest.State
 	case s.Issue.Number > 0:
-		return s.Issue.Number, s.Issue.State, nil
+		i.Number = s.Issue.Number
+		i.State = s.Issue.State
+	default:
+		return nil, fmt.Errorf("can not parse: %s", p)
 	}
-	return 0, "", fmt.Errorf("can not parse: %s", p)
+	return i, nil
 }
 
 func unique(in []string) []string {
