@@ -194,6 +194,7 @@ The variables available in the `if` section are as follows
 | `is_review_required` | `bool` | `true` if a review is required before the pull request can be merged |
 | `is_change_requested` | `bool` | `true` if changes have been requested on the pull request |
 | `mergeable` | `bool` | `true` if the pull request can be merged. |
+| `changed_files` | `int` | Number of changed files in this pull request |
 | `hours_elapsed_since_created` | `int` | Hours elspsed since the issue (pull request) created |
 | `hours_elapsed_since_updated` | `int` | Hours elspsed since the issue (pull request) updated |
 | `number_of_comments` | `int` | Number of comments |

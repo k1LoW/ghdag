@@ -133,6 +133,7 @@ type pullRequestNode struct {
 	Body           githubv4.String
 	URL            githubv4.String
 	IsDraft        githubv4.Boolean
+	ChangedFiles   githubv4.Int
 	Mergeable      githubv4.MergeableState
 	ReviewDecision githubv4.PullRequestReviewDecision
 	ReviewRequests struct {
@@ -576,6 +577,7 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 		IsReviewRequired:            isReviewRequired,
 		IsChangeRequested:           isChangeRequested,
 		Mergeable:                   mergeable,
+		ChangedFiles:                int(p.ChangedFiles),
 		HoursElapsedSinceCreated:    int(now.Sub(p.CreatedAt.Time).Hours()),
 		HoursElapsedSinceUpdated:    int(now.Sub(p.UpdatedAt.Time).Hours()),
 		NumberOfComments:            len(p.Comments.Nodes),
