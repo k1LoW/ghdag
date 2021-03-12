@@ -406,7 +406,9 @@ tasks:
 - `usergroups:read`
 - `chat:write.customize` ( optional )
 
-## Use ghdag as one-shot command on GitHub Actions
+## Use ghdag as the one-shot command on GitHub Actions
+
+`ghdag` can be used not only as a workflow engine, but also as a utility command in jobs on GitHub Actions.
 
 ``` console
 $ ghdag do --help
