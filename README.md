@@ -395,6 +395,7 @@ tasks:
 | `GITHUB_ASSIGNEES` | Additional Assignees to the list in the `assignees:` action | - |
 | `GITHUB_REVIEWERS` | Additional Reviewers to the list in the `reviewers:` action | - |
 | `GHDAG_ACTION_LABELS_BEHAVIOR` | Behavior of the `labels:` action ( `replace` (=default), `add`, `remove` ) | - |
+| `GHDAG_ACTION_COMMENT_MAX` | Maximum number of consecutive comments by the same login ( default: 5 ) | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
