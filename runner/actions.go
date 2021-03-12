@@ -160,7 +160,7 @@ func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, com
 	}
 	r.log(fmt.Sprintf("Add comment: %s", c))
 	if i.NumberOfConsecutiveComments >= 5 {
-		return fmt.Errorf("Too many comments in a row by ghdag: %d", i.NumberOfConsecutiveComments)
+		return fmt.Errorf("Too many comments in a row by same login: %d", i.NumberOfConsecutiveComments)
 	}
 
 	c = fmt.Sprintf("%s\n%s\n", c, sig)
