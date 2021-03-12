@@ -41,7 +41,7 @@ func initLogger() {
 	if os.Getenv("DEBUG") == "" || os.Getenv("DEBUG") == "false" || os.Getenv("DEBUG") == "0" {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
 	output.FormatLevel = func(i interface{}) string {
 		return strings.ToUpper(fmt.Sprintf("[%s]", i.(string)[0:4]))
 	}
