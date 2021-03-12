@@ -148,7 +148,7 @@ func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, r
 	return nil
 }
 
-func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, comment, sig string) error {
+func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, comment string) error {
 	c := os.ExpandEnv(comment)
 	mentions, err := env.Split(os.Getenv("GITHUB_COMMENT_MENTIONS"))
 	if err != nil {
@@ -162,8 +162,6 @@ func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, com
 	if i.NumberOfConsecutiveComments >= 5 {
 		return fmt.Errorf("Too many comments in a row by same login: %d", i.NumberOfConsecutiveComments)
 	}
-
-	c = fmt.Sprintf("%s\n%s\n", c, sig)
 
 	if i.LatestCommentBody == c {
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))

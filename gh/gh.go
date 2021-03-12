@@ -19,7 +19,6 @@ import (
 )
 
 const limit = 100
-const CommentSigPrefix = "<!-- ghdag:"
 
 type GhClient interface {
 	FetchTargets(ctx context.Context) (target.Targets, error)

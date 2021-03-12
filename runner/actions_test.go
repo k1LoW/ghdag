@@ -255,15 +255,14 @@ func TestPerformCommentAction(t *testing.T) {
 
 	tests := []struct {
 		in          string
-		sig         string
 		mentionsEnv string
 		current     string
 		want        string
 		wantErr     interface{}
 	}{
-		{"hello", "<!-- ghdag:test:sig -->", "", "", "hello\n<!-- ghdag:test:sig -->\n", nil},
-		{"hello", "<!-- ghdag:test:sig -->", "alice @bob", "", "@alice @bob hello\n<!-- ghdag:test:sig -->\n", nil},
-		{"hello", "<!-- ghdag:test:sig -->", "", "hello\n<!-- ghdag:test:sig -->\n", "", &erro.AlreadyInStateError{}},
+		{"hello", "", "", "hello", nil},
+		{"hello", "alice @bob", "", "@alice @bob hello", nil},
+		{"hello", "", "hello", "", &erro.AlreadyInStateError{}},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -282,7 +281,7 @@ func TestPerformCommentAction(t *testing.T) {
 		if tt.wantErr == nil {
 			m.EXPECT().AddComment(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
 		}
-		if err := r.PerformCommentAction(ctx, i, tt.in, tt.sig); err != nil {
+		if err := r.PerformCommentAction(ctx, i, tt.in); err != nil {
 			if !errors.As(err, tt.wantErr) {
 				t.Errorf("got %v\nwant %v", err, tt.wantErr)
 			}
