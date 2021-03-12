@@ -281,8 +281,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		reviewers := append(a.Reviewers, rs...)
 		return r.PerformReviewersAction(ctx, i, reviewers)
 	case a.Comment != "":
-		sig := fmt.Sprintf("%s%s:%s -->", gh.CommentSigPrefix, t.Id, a.Type)
-		return r.PerformCommentAction(ctx, i, a.Comment, sig)
+		return r.PerformCommentAction(ctx, i, a.Comment)
 	case a.State != "":
 		return r.PerformStateAction(ctx, i, a.State)
 	case a.Notify != "":

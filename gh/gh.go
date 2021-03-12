@@ -19,7 +19,6 @@ import (
 )
 
 const limit = 100
-const CommentSigPrefix = "<!-- ghdag:"
 
 type GhClient interface {
 	FetchTargets(ctx context.Context) (target.Targets, error)
@@ -190,6 +189,9 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	targets := target.Targets{}
 
 	var q struct {
+		Viewer struct {
+			Login githubv4.String
+		} `graphql:"viewer"`
 		Repogitory struct {
 			Issues struct {
 				Nodes    []issueNode
@@ -224,9 +226,10 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 	}
 
 	now := time.Now()
+	login := string(q.Viewer.Login)
 
 	for _, i := range q.Repogitory.Issues.Nodes {
-		t, err := buildTargetFromIssue(i, now)
+		t, err := buildTargetFromIssue(login, i, now)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +241,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			// Skip draft pull request
 			continue
 		}
-		t, err := buildTargetFromPullRequest(p, now)
+		t, err := buildTargetFromPullRequest(login, p, now)
 		if err != nil {
 			return nil, err
 		}
@@ -250,6 +253,9 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 
 func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error) {
 	var q struct {
+		Viewer struct {
+			Login githubv4.String
+		} `graphql:"viewer"`
 		Repogitory struct {
 			IssueOrPullRequest struct {
 				Issue       issueNode       `graphql:"... on Issue"`
@@ -269,6 +275,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	}
 
 	now := time.Now()
+	login := string(q.Viewer.Login)
 
 	if strings.Contains(string(q.Repogitory.IssueOrPullRequest.Issue.URL), "/issues/") {
 		// Issue
@@ -277,7 +284,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		if state != "open" {
 			return nil, erro.NewNotOpenError(fmt.Errorf("issue #%d is %s", int(i.Number), state))
 		}
-		return buildTargetFromIssue(i, now)
+		return buildTargetFromIssue(login, i, now)
 	} else {
 		// Pull request
 		p := q.Repogitory.IssueOrPullRequest.PullRequest
@@ -288,7 +295,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		if bool(p.IsDraft) {
 			return nil, erro.NewNotOpenError(fmt.Errorf("pull request #%d is draft", int(p.Number)))
 		}
-		return buildTargetFromPullRequest(p, now)
+		return buildTargetFromPullRequest(login, p, now)
 	}
 }
 
@@ -421,7 +428,7 @@ func (rt roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	return rt.transport.RoundTrip(r)
 }
 
-func buildTargetFromIssue(i issueNode, now time.Time) (*target.Target, error) {
+func buildTargetFromIssue(login string, i issueNode, now time.Time) (*target.Target, error) {
 	n := int(i.Number)
 
 	if i.Comments.PageInfo.HasNextPage {
@@ -443,7 +450,7 @@ func buildTargetFromIssue(i issueNode, now time.Time) (*target.Target, error) {
 	}
 	numComments := 0
 	for _, c := range i.Comments.Nodes {
-		if !strings.Contains(string(c.Body), CommentSigPrefix) {
+		if string(c.Author.Login) != login {
 			break
 		}
 		numComments++
@@ -478,7 +485,7 @@ func buildTargetFromIssue(i issueNode, now time.Time) (*target.Target, error) {
 	}, nil
 }
 
-func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Target, error) {
+func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) (*target.Target, error) {
 	n := int(p.Number)
 
 	if p.Comments.PageInfo.HasNextPage {
@@ -500,7 +507,7 @@ func buildTargetFromPullRequest(p pullRequestNode, now time.Time) (*target.Targe
 	}
 	numComments := 0
 	for _, c := range p.Comments.Nodes {
-		if !strings.Contains(string(c.Body), CommentSigPrefix) {
+		if string(c.Author.Login) != login {
 			break
 		}
 		numComments++

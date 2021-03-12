@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -148,7 +149,7 @@ func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, r
 	return nil
 }
 
-func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, comment, sig string) error {
+func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, comment string) error {
 	c := os.ExpandEnv(comment)
 	mentions, err := env.Split(os.Getenv("GITHUB_COMMENT_MENTIONS"))
 	if err != nil {
@@ -159,11 +160,15 @@ func (r *Runner) PerformCommentAction(ctx context.Context, i *target.Target, com
 		return err
 	}
 	r.log(fmt.Sprintf("Add comment: %s", c))
-	if i.NumberOfConsecutiveComments >= 5 {
-		return fmt.Errorf("Too many comments in a row by ghdag: %d", i.NumberOfConsecutiveComments)
+
+	max, err := strconv.Atoi(os.Getenv("GHDAG_ACTION_COMMENT_MAX"))
+	if err != nil {
+		max = 5
 	}
 
-	c = fmt.Sprintf("%s\n%s\n", c, sig)
+	if i.NumberOfConsecutiveComments >= max {
+		return fmt.Errorf("Too many comments in a row by same login: %d", i.NumberOfConsecutiveComments)
+	}
 
 	if i.LatestCommentBody == c {
 		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", c))

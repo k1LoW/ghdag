@@ -23,11 +23,8 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"github.com/k1LoW/ghdag/gh"
-	"github.com/k1LoW/ghdag/task"
 	"github.com/spf13/cobra"
 )
 
@@ -43,8 +40,7 @@ var doCommentCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		sig := fmt.Sprintf("%s%s:%s -->", gh.CommentSigPrefix, "cmd-do", task.ActionTypeDo)
-		if err := r.PerformCommentAction(ctx, t, comment, sig); err != nil {
+		if err := r.PerformCommentAction(ctx, t, comment); err != nil {
 			return err
 		}
 		return nil
