@@ -99,9 +99,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 	}
 
-	eventInfo, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
-	eventName := os.Getenv("GITHUB_EVENT_NAME")
-
 	for {
 		if len(q) == 0 {
 			close(q)
@@ -127,42 +124,15 @@ func (r *Runner) Run(ctx context.Context) error {
 				return err
 			}
 
-			now := time.Now()
-			variables := map[string]interface{}{
-				"year":                now.UTC().Year(),
-				"month":               now.UTC().Month(),
-				"day":                 now.UTC().Day(),
-				"hour":                now.UTC().Hour(),
-				"weekday":             int(now.UTC().Weekday()),
-				"github_event_name":   eventName,
-				"github_event_action": eventInfo.Action,
-			}
-			for _, k := range propagatableEnv {
-				v := os.Getenv(k)
-				key := strings.ToLower(strings.Replace(k, "GHDAG_", "CALLER_", 1))
-				switch k {
-				case "GHDAG_ACTION_LABELS_UPDATED", "GHDAG_ACTION_ASSIGNEES_UPDATED", "GHDAG_ACTION_REVIEWERS_UPDATED":
-					a, _ := env.Split(v)
-					variables[key] = a
-				default:
-					variables[key] = v
-				}
-			}
-			variables = merge(variables, tq.target.Dump())
 			if tq.task.If != "" {
-				do, err := expr.Eval(fmt.Sprintf("(%s) == true", tq.task.If), variables)
-				if err != nil {
-					r.errlog(fmt.Sprintf("%s", err))
+				if !r.CheckIf(tq.task.If, tq.target) {
 					return nil
 				}
-				if !do.(bool) {
-					r.debuglog(fmt.Sprintf("[SKIP] the condition in the `if` section is not met (%s)", tq.task.If))
+			} else {
+				if !tq.called {
+					r.debuglog("[SKIP] the `if:` section is missing")
 					return nil
 				}
-			}
-			if tq.task.If == "" && !tq.called {
-				r.debuglog("[SKIP] the `if:` section is missing")
-				return nil
 			}
 
 			if tq.called {
@@ -243,6 +213,46 @@ func (r *Runner) InitClients() error {
 		r.slack = sc
 	}
 	return nil
+}
+
+func (r *Runner) CheckIf(cond string, i *target.Target) bool {
+	if cond == "" {
+		return false
+	}
+	eventInfo, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
+	eventName := os.Getenv("GITHUB_EVENT_NAME")
+	now := time.Now()
+	variables := map[string]interface{}{
+		"year":                now.UTC().Year(),
+		"month":               now.UTC().Month(),
+		"day":                 now.UTC().Day(),
+		"hour":                now.UTC().Hour(),
+		"weekday":             int(now.UTC().Weekday()),
+		"github_event_name":   eventName,
+		"github_event_action": eventInfo.Action,
+	}
+	for _, k := range propagatableEnv {
+		v := os.Getenv(k)
+		key := strings.ToLower(strings.Replace(k, "GHDAG_", "CALLER_", 1))
+		switch k {
+		case "GHDAG_ACTION_LABELS_UPDATED", "GHDAG_ACTION_ASSIGNEES_UPDATED", "GHDAG_ACTION_REVIEWERS_UPDATED":
+			a, _ := env.Split(v)
+			variables[key] = a
+		default:
+			variables[key] = v
+		}
+	}
+	variables = merge(variables, i.Dump())
+	doOrNot, err := expr.Eval(fmt.Sprintf("(%s) == true", cond), variables)
+	if err != nil {
+		r.errlog(fmt.Sprintf("%s", err))
+		return false
+	}
+	if !doOrNot.(bool) {
+		r.debuglog(fmt.Sprintf("[SKIP] the condition in the `if` section is not met (%s)", cond))
+		return false
+	}
+	return true
 }
 
 func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, t *task.Task, q chan TaskQueue) error {
