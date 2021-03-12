@@ -24,6 +24,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/k1LoW/ghdag/gh"
 	"github.com/k1LoW/ghdag/task"
@@ -35,15 +36,15 @@ var doCommentCmd = &cobra.Command{
 	Use:   "comment [COMMENT]",
 	Short: "create the comment of the target issue or pull request",
 	Long:  "create the comment of the target issue or pull request.",
-	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		comment := strings.Join(args, " ")
 		ctx := context.Background()
 		r, t, err := initRunnerAndTask(ctx, number)
 		if err != nil {
 			return err
 		}
 		sig := fmt.Sprintf("%s%s:%s -->", gh.CommentSigPrefix, "cmd-do", task.ActionTypeDo)
-		if err := r.PerformCommentAction(ctx, t, args[0], sig); err != nil {
+		if err := r.PerformCommentAction(ctx, t, comment, sig); err != nil {
 			return err
 		}
 		return nil

@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"context"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -32,14 +33,14 @@ var doNotifyCmd = &cobra.Command{
 	Use:   "notify [MESSAGE]",
 	Short: "send notify message to slack channel",
 	Long:  "send notify message to slack channel.",
-	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		message := strings.Join(args, " ")
 		ctx := context.Background()
 		r, _, err := initRunnerAndTask(ctx, number)
 		if err != nil {
 			return err
 		}
-		if err := r.PerformNotifyAction(ctx, nil, args[0]); err != nil {
+		if err := r.PerformNotifyAction(ctx, nil, message); err != nil {
 			return err
 		}
 		return nil
