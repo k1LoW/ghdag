@@ -79,7 +79,7 @@ $ ghdag run myworkflow.yml
 2021-02-28T00:26:41+09:00 [INFO] Fetch all open issues and pull requests from k1LoW/myrepo
 2021-02-28T00:26:42+09:00 [INFO] 3 issues and pull requests are fetched
 2021-02-28T00:26:42+09:00 [INFO] 1 tasks are loaded
-2021-02-28T00:26:42+09:00 [INFO] [#14 << set-question-label] [DO] Set labels: question
+2021-02-28T00:26:42+09:00 [INFO] [#14 << set-question-label] [DO] Replace labels: question
 Set labels
 2021-02-28T00:26:43+09:00 [INFO] Session finished
 $
@@ -406,7 +406,7 @@ tasks:
 - `usergroups:read`
 - `chat:write.customize` ( optional )
 
-## `ghdag do` commmands for performing an action one-shot
+## Use ghdag as one-shot command on GitHub Actions
 
 ``` console
 $ ghdag do --help
@@ -428,28 +428,53 @@ Flags:
   -h, --help   help for do
 
 Use "ghdag do [command] --help" for more information about a command.
+$ ghdag if --help
+check condition.
+
+Usage:
+  ghdag if [CONDITION] [flags]
+
+Flags:
+  -h, --help         help for if
+  -n, --number int   issue or pull request number
 ```
 
 **Example**
 
-``` console
-$ export GITHUB_REPOGITORY=owner/repo
-$ export GITHUB_TOKEN=XXXxxXXXXXxxXxXXXX
-$ ghdag do labels bug question --number 54
-2021-03-10T21:43:26+09:00 [INFO] Set labels: bug question
-$
+``` yaml
+name: labels
+
+on:
+  issues:
+    types: [created]
+
+jobs:
+  set-labels:
+    name: Set labels
+    runs-on: ubuntu-latest
+    container: ghcr.io/k1low/ghdag:latest
+    steps:
+      - name: Set labels
+        run: ghdag do labels question
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-``` console
-$ export GITHUB_REPOGITORY=owner/repo
-$ export GITHUB_TOKEN=XXXxxXXXXXxxXxXXXX
-$ export GITHUB_TOKEN=XXXxxXXXXXxxXxXXXX
-$ export SLACK_API_TOKEN=xoxb-XxXXXXXXXXXXxxxxxxxxxxXXXXXXXXXXXxxxxxxxxXXXXXXXX
-$ export SLACK_CHANNEL=operations
-$ export SLACK_MENTIONS=bob
-$ ghdag do notify hello
-2021-03-10T21:43:26+09:00 [INFO] Send notification: hello
-$
+``` yaml
+name: build
+
+jobs:
+  job-tests:
+
+# snip
+
+      - name: Send notification to channel
+        if: failure()
+        run: ghdag do notify 'Test faild'
+        env:
+          SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
+          SLACK_CHANNEL: operations
+          SLACK_MENTIONS: bob
 ```
 
 ## Install
