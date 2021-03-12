@@ -1,3 +1,8 @@
+## [v0.10.0](https://github.com/k1LoW/ghdag/compare/v0.9.0...v0.10.0) (2021-03-12)
+
+* [BREAKING] Output log to STDERR [#47](https://github.com/k1LoW/ghdag/pull/47) ([k1LoW](https://github.com/k1LoW))
+* Add `if` command [#46](https://github.com/k1LoW/ghdag/pull/46) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.9.0](https://github.com/k1LoW/ghdag/compare/v0.8.0...v0.9.0) (2021-03-11)
 
 * Add variable `github_event_action` [#45](https://github.com/k1LoW/ghdag/pull/45) ([k1LoW](https://github.com/k1LoW))
