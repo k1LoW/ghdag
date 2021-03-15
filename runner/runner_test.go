@@ -6,8 +6,78 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bxcodec/faker/v3"
 	"github.com/google/go-cmp/cmp"
+	"github.com/k1LoW/ghdag/target"
 )
+
+func TestCheckIf(t *testing.T) {
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	tests := []struct {
+		cond string
+		env  map[string]string
+		want bool
+	}{
+		{
+			"",
+			map[string]string{},
+			false,
+		},
+		{
+			"github_event_name == 'issues'",
+			map[string]string{
+				"GITHUB_EVENT_NAME": "issues",
+			},
+			true,
+		},
+		{
+			"'bug' in caller_action_labels_updated",
+			map[string]string{
+				"GHDAG_ACTION_LABELS_UPDATED": "bug question",
+			},
+			true,
+		},
+		{
+			`github_event_name
+==
+'issues'
+&&
+'question'
+in
+caller_action_labels_updated`,
+			map[string]string{
+				"GITHUB_EVENT_NAME":           "issues",
+				"GHDAG_ACTION_LABELS_UPDATED": "bug question",
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		for k, v := range tt.env {
+			os.Setenv(k, v)
+		}
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		got := r.CheckIf(tt.cond, i)
+		if got != tt.want {
+			t.Errorf("if(%s) got %v\nwant %v", tt.cond, got, tt.want)
+		}
+	}
+}
 
 func TestDetectTargetNumber(t *testing.T) {
 	tests := []struct {
