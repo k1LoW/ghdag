@@ -45,15 +45,25 @@ func TestCheckIf(t *testing.T) {
 		},
 		{
 			`github_event_name
-==
-'issues'
-&&
-'question'
-in
-caller_action_labels_updated`,
+		==
+		'issues'
+		&&
+		'question'
+		in
+		caller_action_labels_updated`,
 			map[string]string{
 				"GITHUB_EVENT_NAME":           "issues",
 				"GHDAG_ACTION_LABELS_UPDATED": "bug question",
+			},
+			true,
+		},
+		{
+			`github.event_name == 'issues'
+		&& github.event.action == 'opened'
+		&& github.event.issue.state == 'open'`,
+			map[string]string{
+				"GITHUB_EVENT_NAME": "issues",
+				"GITHUB_EVENT_PATH": filepath.Join(testdataDir(), "event_issue_opened.json"),
 			},
 			true,
 		},
