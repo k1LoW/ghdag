@@ -221,6 +221,11 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	}
 	eventInfo, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
 	eventName := os.Getenv("GITHUB_EVENT_NAME")
+	isCalled := true
+	k := "GHDAG_TASK_IS_CALLED"
+	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
+		isCalled = false
+	}
 	now := time.Now()
 	variables := map[string]interface{}{
 		"year":                now.UTC().Year(),
@@ -230,6 +235,7 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 		"weekday":             int(now.UTC().Weekday()),
 		"github_event_name":   eventName,
 		"github_event_action": eventInfo.Action,
+		"is_called":           isCalled,
 	}
 	for _, k := range propagatableEnv {
 		v := os.Getenv(k)
@@ -333,6 +339,16 @@ func (r *Runner) initTaskEnv(tq TaskQueue) error {
 		}
 	}
 	if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
+		return err
+	}
+
+	var isCalled string
+	if tq.called {
+		isCalled = "1"
+	} else {
+		isCalled = "0"
+	}
+	if err := os.Setenv("GHDAG_TASK_IS_CALLED", isCalled); err != nil {
 		return err
 	}
 	if err := r.config.Env.Setenv(); err != nil {
