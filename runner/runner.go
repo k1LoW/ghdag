@@ -239,6 +239,10 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 		"github_event_name":   r.event.Name,
 		"github_event_action": r.event.Action,
 		"is_called":           isCalled,
+		"github": map[string]interface{}{
+			"event_name": r.event.Name,
+			"event":      r.event.Payload,
+		},
 	}
 	for _, k := range propagatableEnv {
 		v := os.Getenv(k)
@@ -443,10 +447,11 @@ func (r *Runner) revertEnv() error {
 }
 
 type GitHubEvent struct {
-	Name   string
-	Action string
-	Number int
-	State  string
+	Name    string
+	Action  string
+	Number  int
+	State   string
+	Payload interface{}
 }
 
 func decodeGitHubEvent() (*GitHubEvent, error) {
@@ -482,6 +487,15 @@ func decodeGitHubEvent() (*GitHubEvent, error) {
 		i.Number = s.Issue.Number
 		i.State = s.Issue.State
 	}
+
+	var payload interface{}
+
+	if err := json.Unmarshal(b, &payload); err != nil {
+		return i, err
+	}
+
+	i.Payload = payload
+
 	return i, nil
 }
 
