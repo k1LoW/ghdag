@@ -98,7 +98,7 @@ func TestDetectTargetNumber(t *testing.T) {
 			t.Fatal(err)
 		}
 		os.Setenv("GITHUB_EVENT_PATH", filepath.Join(testdataDir(), tt.path))
-		got, err := DecodeGitHubEvent()
+		got, err := decodeGitHubEvent()
 		if tt.wantErr && err != nil {
 			continue
 		}

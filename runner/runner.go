@@ -39,7 +39,7 @@ type Runner struct {
 }
 
 func New(c *config.Config) (*Runner, error) {
-	e, _ := DecodeGitHubEvent()
+	e, _ := decodeGitHubEvent()
 	return &Runner{
 		config:     c,
 		github:     nil,
@@ -384,18 +384,14 @@ func (r *Runner) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	if n > 0 {
 		return r.github.FetchTarget(ctx, n)
 	}
-	e, err := DecodeGitHubEvent()
-	if err != nil {
-		return nil, err
+	if !strings.HasPrefix(r.event.Name, "issue") && !strings.HasPrefix(r.event.Name, "pull_request") {
+		return nil, fmt.Errorf("unsupported event: %s", r.event.Name)
 	}
-	if !strings.HasPrefix(e.Name, "issue") && !strings.HasPrefix(e.Name, "pull_request") {
-		return nil, fmt.Errorf("unsupported event: %s", e.Name)
+	if r.event.State != "open" {
+		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, r.event.State))
 	}
-	if e.State != "open" {
-		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, e.State))
-	}
-	r.log(fmt.Sprintf("Fetch #%d from %s", e.Number, os.Getenv("GITHUB_REPOSITORY")))
-	return r.github.FetchTarget(ctx, e.Number)
+	r.log(fmt.Sprintf("Fetch #%d from %s", r.event.Number, os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTarget(ctx, r.event.Number)
 }
 
 func (r *Runner) setExcludeKey(in []string, exclude string) error {
@@ -452,7 +448,7 @@ type GitHubEvent struct {
 	State  string
 }
 
-func DecodeGitHubEvent() (*GitHubEvent, error) {
+func decodeGitHubEvent() (*GitHubEvent, error) {
 	p := os.Getenv("GITHUB_EVENT_PATH")
 	i := &GitHubEvent{
 		Name: os.Getenv("GITHUB_EVENT_NAME"),
