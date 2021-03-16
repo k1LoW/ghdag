@@ -229,7 +229,6 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
 		isCalled = false
 	}
-	_, _ = fmt.Fprintf(os.Stderr, "calleeeeeeeeeed: %v\n", isCalled)
 	now := time.Now()
 	variables := map[string]interface{}{
 		"year":                now.UTC().Year(),
