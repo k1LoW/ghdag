@@ -1,3 +1,7 @@
+## [v0.10.3](https://github.com/k1LoW/ghdag/compare/v0.10.2...v0.10.3) (2021-03-16)
+
+* Fix env set bug [#50](https://github.com/k1LoW/ghdag/pull/50) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.10.2](https://github.com/k1LoW/ghdag/compare/v0.10.1...v0.10.2) (2021-03-16)
 
 * Add variable `is_called` [#49](https://github.com/k1LoW/ghdag/pull/49) ([k1LoW](https://github.com/k1LoW))
