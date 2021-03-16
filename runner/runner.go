@@ -27,21 +27,24 @@ import (
 )
 
 type Runner struct {
+	mu         sync.Mutex
 	config     *config.Config
 	github     gh.GhClient
 	slack      slk.SlkClient
+	event      *GitHubEvent
 	envCache   []string
-	mu         sync.Mutex
 	logPrefix  string
 	seed       int64
 	excludeKey int
 }
 
 func New(c *config.Config) (*Runner, error) {
+	e, _ := decodeGitHubEvent()
 	return &Runner{
 		config:     c,
 		github:     nil,
 		slack:      nil,
+		event:      e,
 		envCache:   os.Environ(),
 		logPrefix:  "",
 		seed:       time.Now().UnixNano(),
@@ -62,6 +65,8 @@ type TaskQueue struct {
 func (r *Runner) Run(ctx context.Context) error {
 	r.logPrefix = ""
 	r.log("Start session")
+	r.log(fmt.Sprintf("github_event_name: %s", r.event.Name))
+	r.log(fmt.Sprintf("github_event_action: %s", r.event.Action))
 	defer func() {
 		_ = r.revertEnv()
 		r.logPrefix = ""
@@ -219,8 +224,6 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	if cond == "" {
 		return false
 	}
-	eventInfo, _ := DecodeGitHubEventInfo(os.Getenv("GITHUB_EVENT_PATH"))
-	eventName := os.Getenv("GITHUB_EVENT_NAME")
 	isCalled := true
 	k := "GHDAG_TASK_IS_CALLED"
 	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
@@ -234,8 +237,8 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 		"day":                 now.UTC().Day(),
 		"hour":                now.UTC().Hour(),
 		"weekday":             int(now.UTC().Weekday()),
-		"github_event_name":   eventName,
-		"github_event_action": eventInfo.Action,
+		"github_event_name":   r.event.Name,
+		"github_event_action": r.event.Action,
 		"is_called":           isCalled,
 	}
 	for _, k := range propagatableEnv {
@@ -383,20 +386,14 @@ func (r *Runner) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	if n > 0 {
 		return r.github.FetchTarget(ctx, n)
 	}
-	en := os.Getenv("GITHUB_EVENT_NAME")
-	if !strings.HasPrefix(en, "issue") && !strings.HasPrefix(en, "pull_request") {
-		return nil, fmt.Errorf("unsupported event: %s", en)
+	if !strings.HasPrefix(r.event.Name, "issue") && !strings.HasPrefix(r.event.Name, "pull_request") {
+		return nil, fmt.Errorf("unsupported event: %s", r.event.Name)
 	}
-	ep := os.Getenv("GITHUB_EVENT_PATH")
-	i, err := DecodeGitHubEventInfo(ep)
-	if err != nil {
-		return nil, err
+	if r.event.State != "open" {
+		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, r.event.State))
 	}
-	if i.State != "open" {
-		return nil, erro.NewNotOpenError(fmt.Errorf("#%d is %s", n, i.State))
-	}
-	r.log(fmt.Sprintf("Fetch #%d from %s", i.Number, os.Getenv("GITHUB_REPOSITORY")))
-	return r.github.FetchTarget(ctx, i.Number)
+	r.log(fmt.Sprintf("Fetch #%d from %s", r.event.Number, os.Getenv("GITHUB_REPOSITORY")))
+	return r.github.FetchTarget(ctx, r.event.Number)
 }
 
 func (r *Runner) setExcludeKey(in []string, exclude string) error {
@@ -446,14 +443,19 @@ func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
 }
 
-type GitHubEventInfo struct {
+type GitHubEvent struct {
+	Name   string
 	Action string
 	Number int
 	State  string
 }
 
-func DecodeGitHubEventInfo(p string) (*GitHubEventInfo, error) {
-	i := &GitHubEventInfo{}
+func decodeGitHubEvent() (*GitHubEvent, error) {
+	p := os.Getenv("GITHUB_EVENT_PATH")
+	n := os.Getenv("GITHUB_EVENT_NAME")
+	i := &GitHubEvent{
+		Name: n,
+	}
 	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {
 		return i, err
