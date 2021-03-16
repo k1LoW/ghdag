@@ -30,7 +30,7 @@ func TestCheckIf(t *testing.T) {
 			false,
 		},
 		{
-			"github_event_name == 'issues'",
+			"github.event_name == 'issues'",
 			map[string]string{
 				"GITHUB_EVENT_NAME": "issues",
 			},
@@ -44,7 +44,7 @@ func TestCheckIf(t *testing.T) {
 			true,
 		},
 		{
-			`github_event_name
+			`github.event_name
 		==
 		'issues'
 		&&
