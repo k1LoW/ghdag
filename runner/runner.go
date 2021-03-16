@@ -124,17 +124,6 @@ func (r *Runner) Run(ctx context.Context) error {
 				return err
 			}
 
-			if tq.task.If != "" {
-				if !r.CheckIf(tq.task.If, tq.target) {
-					return nil
-				}
-			} else {
-				if !tq.called {
-					r.debuglog("[SKIP] the `if:` section is missing")
-					return nil
-				}
-			}
-
 			if tq.called {
 				// Update target
 				target, err := r.github.FetchTarget(ctx, tq.target.Number)
@@ -155,6 +144,17 @@ func (r *Runner) Run(ctx context.Context) error {
 				// Set caller seed
 				r.seed = tq.callerSeed
 				r.excludeKey = tq.callerExcludeKey
+			}
+
+			if tq.task.If != "" {
+				if !r.CheckIf(tq.task.If, tq.target) {
+					return nil
+				}
+			} else {
+				if !tq.called {
+					r.debuglog("[SKIP] the `if:` section is missing")
+					return nil
+				}
 			}
 
 			r.logPrefix = fmt.Sprintf(fmt.Sprintf("[#%%-%dd << %%-%ds] [DO] ", maxDigits, maxLength), n, id)
@@ -221,6 +221,12 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	}
 	eventInfo, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
 	eventName := os.Getenv("GITHUB_EVENT_NAME")
+	isCalled := true
+	k := "GHDAG_TASK_IS_CALLED"
+	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
+		isCalled = false
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "calleeeeeeeeeed: %v\n", isCalled)
 	now := time.Now()
 	variables := map[string]interface{}{
 		"year":                now.UTC().Year(),
@@ -230,6 +236,7 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 		"weekday":             int(now.UTC().Weekday()),
 		"github_event_name":   eventName,
 		"github_event_action": eventInfo.Action,
+		"is_called":           isCalled,
 	}
 	for _, k := range propagatableEnv {
 		v := os.Getenv(k)
@@ -333,6 +340,16 @@ func (r *Runner) initTaskEnv(tq TaskQueue) error {
 		}
 	}
 	if err := os.Setenv("GHDAG_TASK_ID", id); err != nil {
+		return err
+	}
+
+	var isCalled string
+	if tq.called {
+		isCalled = "1"
+	} else {
+		isCalled = "0"
+	}
+	if err := os.Setenv("GHDAG_TASK_IS_CALLED", isCalled); err != nil {
 		return err
 	}
 	if err := r.config.Env.Setenv(); err != nil {

@@ -239,3 +239,44 @@ jobs:
 ```
 
 </details>
+
+## Allow auto-merge using label
+
+``` yaml
+# myworkflow.yml
+---
+tasks:
+  -
+    id: allow-auto-merge
+    if: 'is_approved && mergeable && "allow-auto-merge" in labels'
+    do:
+      state: merge
+```
+
+<details>
+
+<summary>GitHub Actions workflow YAML file</summary>
+
+``` yaml
+# .github/workflows/ghdag_workflow.yml
+name: ghdag workflow
+on:
+  pull_request_review:
+
+jobs:
+  run-workflow:
+    name: 'Run workflow for A **single** `opened` issue that triggered the event'
+    runs-on: ubuntu-latest
+    container: ghcr.io/k1low/ghdag:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run ghdag
+        run: ghdag run myworkflow.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+</details>
