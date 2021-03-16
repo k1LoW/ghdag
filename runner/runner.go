@@ -65,6 +65,8 @@ type TaskQueue struct {
 func (r *Runner) Run(ctx context.Context) error {
 	r.logPrefix = ""
 	r.log("Start session")
+	r.log(fmt.Sprintf("github_event_name: %s", r.event.Name))
+	r.log(fmt.Sprintf("github_event_action: %s", r.event.Action))
 	defer func() {
 		_ = r.revertEnv()
 		r.logPrefix = ""
@@ -450,8 +452,9 @@ type GitHubEvent struct {
 
 func decodeGitHubEvent() (*GitHubEvent, error) {
 	p := os.Getenv("GITHUB_EVENT_PATH")
+	n := os.Getenv("GITHUB_EVENT_NAME")
 	i := &GitHubEvent{
-		Name: os.Getenv("GITHUB_EVENT_NAME"),
+		Name: n,
 	}
 	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {
