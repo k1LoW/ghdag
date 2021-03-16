@@ -65,8 +65,8 @@ type TaskQueue struct {
 func (r *Runner) Run(ctx context.Context) error {
 	r.logPrefix = ""
 	r.log("Start session")
-	r.log(fmt.Sprintf("github_event_name: %s", r.event.Name))
-	r.log(fmt.Sprintf("github_event_action: %s", r.event.Action))
+	r.log(fmt.Sprintf("github.event_name: %s", r.event.Name))
+	r.debuglog(fmt.Sprintf("github.event: %s", r.event.RawPayload))
 	defer func() {
 		_ = r.revertEnv()
 		r.logPrefix = ""
@@ -447,11 +447,12 @@ func (r *Runner) revertEnv() error {
 }
 
 type GitHubEvent struct {
-	Name    string
-	Action  string
-	Number  int
-	State   string
-	Payload interface{}
+	Name       string
+	Action     string
+	Number     int
+	State      string
+	Payload    interface{}
+	RawPayload []byte
 }
 
 func decodeGitHubEvent() (*GitHubEvent, error) {
@@ -495,6 +496,7 @@ func decodeGitHubEvent() (*GitHubEvent, error) {
 	}
 
 	i.Payload = payload
+	i.RawPayload = b
 
 	return i, nil
 }
