@@ -219,7 +219,7 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	if cond == "" {
 		return false
 	}
-	eventInfo, _ := DecodeGitHubEventInfo("GITHUB_EVENT_PATH")
+	eventInfo, _ := DecodeGitHubEventInfo(os.Getenv("GITHUB_EVENT_PATH"))
 	eventName := os.Getenv("GITHUB_EVENT_NAME")
 	isCalled := true
 	k := "GHDAG_TASK_IS_CALLED"
