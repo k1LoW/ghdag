@@ -8,20 +8,17 @@ import (
 
 	"github.com/bxcodec/faker/v3"
 	"github.com/google/go-cmp/cmp"
+	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/target"
 )
 
 func TestCheckIf(t *testing.T) {
-	r, err := New(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	envCache := os.Environ()
 	defer func() {
-		if err := r.revertEnv(); err != nil {
+		if err := env.Revert(envCache); err != nil {
 			t.Fatal(err)
 		}
 	}()
-
 	tests := []struct {
 		cond string
 		env  map[string]string
@@ -62,11 +59,15 @@ caller_action_labels_updated`,
 		},
 	}
 	for _, tt := range tests {
-		if err := r.revertEnv(); err != nil {
+		if err := env.Revert(envCache); err != nil {
 			t.Fatal(err)
 		}
 		for k, v := range tt.env {
 			os.Setenv(k, v)
+		}
+		r, err := New(nil)
+		if err != nil {
+			t.Fatal(err)
 		}
 		i := &target.Target{}
 		if err := faker.FakeData(i); err != nil {
@@ -91,8 +92,13 @@ func TestDetectTargetNumber(t *testing.T) {
 		{"event_pull_request_opened.json", 20, "open", "opened", false},
 		{"event_issue_comment_opened.json", 20, "open", "created", false},
 	}
+	envCache := os.Environ()
 	for _, tt := range tests {
-		got, err := DecodeGitHubEventInfo(filepath.Join(testdataDir(), tt.path))
+		if err := env.Revert(envCache); err != nil {
+			t.Fatal(err)
+		}
+		os.Setenv("GITHUB_EVENT_PATH", filepath.Join(testdataDir(), tt.path))
+		got, err := DecodeGitHubEvent()
 		if tt.wantErr && err != nil {
 			continue
 		}
