@@ -231,14 +231,12 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	}
 	now := time.Now()
 	variables := map[string]interface{}{
-		"year":                now.UTC().Year(),
-		"month":               now.UTC().Month(),
-		"day":                 now.UTC().Day(),
-		"hour":                now.UTC().Hour(),
-		"weekday":             int(now.UTC().Weekday()),
-		"github_event_name":   r.event.Name,
-		"github_event_action": r.event.Action,
-		"is_called":           isCalled,
+		"year":      now.UTC().Year(),
+		"month":     now.UTC().Month(),
+		"day":       now.UTC().Day(),
+		"hour":      now.UTC().Hour(),
+		"weekday":   int(now.UTC().Weekday()),
+		"is_called": isCalled,
 		"github": map[string]interface{}{
 			"event_name": r.event.Name,
 			"event":      r.event.Payload,
@@ -448,7 +446,6 @@ func (r *Runner) revertEnv() error {
 
 type GitHubEvent struct {
 	Name       string
-	Action     string
 	Number     int
 	State      string
 	Payload    interface{}
@@ -466,7 +463,6 @@ func decodeGitHubEvent() (*GitHubEvent, error) {
 		return i, err
 	}
 	s := struct {
-		Action      string `json:"action,omitempty"`
 		PullRequest struct {
 			Number int    `json:"number,omitempty"`
 			State  string `json:"state,omitempty"`
@@ -479,7 +475,6 @@ func decodeGitHubEvent() (*GitHubEvent, error) {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return i, err
 	}
-	i.Action = s.Action
 	switch {
 	case s.PullRequest.Number > 0:
 		i.Number = s.PullRequest.Number
