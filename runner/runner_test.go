@@ -67,6 +67,15 @@ func TestCheckIf(t *testing.T) {
 			},
 			true,
 		},
+		{
+			`github.event_name == 'pull_request'
+		|| github.event.invalid_value == 'xxxxxxx'`,
+			map[string]string{
+				"GITHUB_EVENT_NAME": "pull_request",
+				"GITHUB_EVENT_PATH": filepath.Join(testdataDir(), "event_pull_request_opened.json"),
+			},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		if err := env.Revert(envCache); err != nil {
