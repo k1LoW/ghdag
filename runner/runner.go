@@ -282,14 +282,14 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 		if err != nil {
 			return err
 		}
-		assignees := append(a.Assignees, as...)
+		assignees := unique(append(a.Assignees, as...))
 		return r.PerformAssigneesAction(ctx, i, assignees)
 	case len(a.Reviewers) > 0 || (a.Reviewers != nil && os.Getenv("GITHUB_REVIEWERS") != ""):
-		rs, err := env.Split(os.Getenv("GITHUB_ASSIGNEES"))
+		rs, err := env.Split(os.Getenv("GITHUB_REVIEWERS"))
 		if err != nil {
 			return err
 		}
-		reviewers := append(a.Reviewers, rs...)
+		reviewers := unique(append(a.Reviewers, rs...))
 		return r.PerformReviewersAction(ctx, i, reviewers)
 	case a.Comment != "":
 		return r.PerformCommentAction(ctx, i, a.Comment)
@@ -498,12 +498,13 @@ func decodeGitHubEvent() (*GitHubEvent, error) {
 
 func unique(in []string) []string {
 	m := map[string]struct{}{}
-	for _, s := range in {
-		m[s] = struct{}{}
-	}
 	u := []string{}
-	for s := range m {
+	for _, s := range in {
+		if _, ok := m[s]; ok {
+			continue
+		}
 		u = append(u, s)
+		m[s] = struct{}{}
 	}
 	return u
 }
