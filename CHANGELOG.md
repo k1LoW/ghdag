@@ -1,3 +1,7 @@
+## [v0.12.0](https://github.com/k1LoW/ghdag/compare/v0.11.1...v0.12.0) (2021-03-17)
+
+* Add `linkedNames:` for linking the GitHub user or team name to the Slack user or team account name. [#56](https://github.com/k1LoW/ghdag/pull/56) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.11.1](https://github.com/k1LoW/ghdag/compare/v0.11.0...v0.11.1) (2021-03-17)
 
 * Fix reviewers: action [#55](https://github.com/k1LoW/ghdag/pull/55) ([k1LoW](https://github.com/k1LoW))
