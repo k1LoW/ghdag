@@ -78,3 +78,20 @@ func Join(in []string) string {
 	}
 	return strings.Join(formated, " ")
 }
+
+func EnvMap() map[string]string {
+	m := map[string]string{}
+	for _, kv := range os.Environ() {
+		if !strings.Contains(kv, "=") {
+			continue
+		}
+		parts := strings.SplitN(kv, "=", 2)
+		k := parts[0]
+		if len(parts) < 2 {
+			m[k] = ""
+			continue
+		}
+		m[k] = parts[1]
+	}
+	return m
+}
