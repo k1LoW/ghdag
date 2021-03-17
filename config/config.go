@@ -15,6 +15,10 @@ type Config struct {
 	LinkedNames name.LinkedNames `yaml:"linkedNames"`
 }
 
+func New() *Config {
+	return &Config{}
+}
+
 func (c *Config) CheckSyntax() error {
 	valid, errors := c.Tasks.CheckSyntax()
 	if !valid {

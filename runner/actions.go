@@ -79,6 +79,7 @@ func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labe
 }
 
 func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, assignees []string) error {
+	assignees = r.config.LinkedNames.ToGithubNames(assignees)
 	as, err := r.github.ResolveUsers(ctx, assignees)
 	if err != nil {
 		return err
@@ -106,6 +107,7 @@ func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, a
 }
 
 func (r *Runner) PerformReviewersAction(ctx context.Context, i *target.Target, reviewers []string) error {
+	reviewers = r.config.LinkedNames.ToGithubNames(reviewers)
 	if contains(reviewers, i.Author) {
 		r.debuglog(fmt.Sprintf("Exclude author from reviewers: %s", reviewers))
 		if err := r.setExcludeKey(reviewers, i.Author); err != nil {
@@ -221,6 +223,7 @@ func (r *Runner) PerformNotifyAction(ctx context.Context, _ *target.Target, noti
 	if err != nil {
 		return err
 	}
+	mentions = r.config.LinkedNames.ToSlackNames(mentions)
 	mentions, err = r.sample(mentions, "SLACK_MENTIONS_SAMPLE")
 	if err != nil {
 		return err

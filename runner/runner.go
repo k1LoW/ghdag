@@ -40,6 +40,9 @@ type Runner struct {
 
 func New(c *config.Config) (*Runner, error) {
 	e, _ := decodeGitHubEvent()
+	if c == nil {
+		c = config.New()
+	}
 	return &Runner{
 		config:     c,
 		github:     nil,
