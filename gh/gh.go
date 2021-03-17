@@ -319,7 +319,7 @@ func (c *Client) SetReviewers(ctx context.Context, n int, reviewers []string) er
 	ru := map[string]struct{}{}
 	rt := map[string]struct{}{}
 	for _, r := range reviewers {
-		trimed := strings.Trim(r, "@")
+		trimed := strings.TrimPrefix(r, "@")
 		if strings.Contains(trimed, "/") {
 			splitted := strings.Split(trimed, "/")
 			rt[splitted[1]] = struct{}{}
@@ -398,7 +398,7 @@ func (c *Client) MergePullRequest(ctx context.Context, n int) error {
 func (c *Client) ResolveUsers(ctx context.Context, in []string) ([]string, error) {
 	res := []string{}
 	for _, inu := range in {
-		trimed := strings.Trim(inu, "@")
+		trimed := strings.TrimPrefix(inu, "@")
 		if !strings.Contains(trimed, "/") {
 			res = append(res, trimed)
 			continue

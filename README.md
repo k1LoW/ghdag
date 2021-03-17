@@ -340,7 +340,7 @@ ng:
   notify: error ${GHDAG_ACTION_OK_ERROR}
 env:
   SLACK_CHANNEL: workflow-alerts
-  SLACK_MENTIONS: [bob]
+  SLACK_MENTIONS: bob
 ```
 
 ##### Required environment variables
@@ -406,6 +406,29 @@ tasks:
 - `users:read`
 - `usergroups:read`
 - `chat:write.customize` ( optional )
+
+## Link the GitHub user or team name to the Slack user or team account name
+
+Provides the feature `linkedNames:` to link GitHub and Slack transparently even if they have different account names.
+
+**Example**
+
+Send a Slack message with a mention ( `@bob_marly` ) to the author ( `@bob` ) of the pull request.
+
+``` yaml
+tasks:
+  -
+    id: notify-slack
+    if: 'is_pull_request && is_approved && mergeable'
+    do:
+      notify: Your pull request is ready for merge !
+    env:
+      SLACK_MENTIONS: ${GHDAG_TASK_AUTHOR}
+linkedNames:
+  -
+    github: bob
+    slack: bob_marly
+```
 
 ## Use ghdag as the one-shot command on GitHub Actions
 
