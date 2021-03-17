@@ -1,3 +1,7 @@
+## [v0.11.1](https://github.com/k1LoW/ghdag/compare/v0.11.0...v0.11.1) (2021-03-17)
+
+* Fix reviewers: action [#55](https://github.com/k1LoW/ghdag/pull/55) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.11.0](https://github.com/k1LoW/ghdag/compare/v0.10.3...v0.11.0) (2021-03-17)
 
 * [BREAKING] Remove variables `github_event_name` `github_event_action` [#54](https://github.com/k1LoW/ghdag/pull/54) ([k1LoW](https://github.com/k1LoW))
