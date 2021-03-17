@@ -244,6 +244,7 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 			"event_name": r.event.Name,
 			"event":      r.event.Payload,
 		},
+		"env": env.EnvMap(),
 	}
 	for _, k := range propagatableEnv {
 		v := os.Getenv(k)

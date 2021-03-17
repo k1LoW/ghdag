@@ -216,7 +216,8 @@ The variables available in the `if` section are as follows
 | `hour` | `int` | Hour of current time (UTC) |
 | `weekday` | `int` | Weekday of current time (UTC) (Sunday = 0, ...) |
 | `github.event_name` | `string` | Event name of GitHub Actions ( ex. `issues`, `pull_request` )|
-| `github.event.*` | `object` | Detailed data for each event of GitHub Actions (ex. `github.event.action`, `github.event.label.name` ) |
+| `github.event` | `object` | Detailed data for each event of GitHub Actions (ex. `github.event.action`, `github.event.label.name` ) |
+| `env.<env_name>` | `string` | The value of a specific environment variable |
 
 #### `tasks[*].env:`
 

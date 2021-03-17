@@ -76,6 +76,13 @@ func TestCheckIf(t *testing.T) {
 			},
 			true,
 		},
+		{
+			"env.GITHUB_EVENT_NAME == 'issues'",
+			map[string]string{
+				"GITHUB_EVENT_NAME": "issues",
+			},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		if err := env.Revert(envCache); err != nil {
