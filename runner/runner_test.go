@@ -206,6 +206,24 @@ func TestSampleByEnvWithSameSeed(t *testing.T) {
 	}
 }
 
+func TestUnique(t *testing.T) {
+	tests := []struct {
+		in   []string
+		want []string
+	}{
+		{[]string{}, []string{}},
+		{[]string{"a", "b", "a"}, []string{"a", "b"}},
+		{[]string{"a", "b", "a", "a"}, []string{"a", "b"}},
+		{[]string{"b", "b", "a", "a", "b"}, []string{"b", "a"}},
+	}
+	for _, tt := range tests {
+		got := unique(tt.in)
+		if diff := cmp.Diff(got, tt.want, nil); diff != "" {
+			t.Errorf("%s", diff)
+		}
+	}
+}
+
 func testdataDir() string {
 	wd, _ := os.Getwd()
 	dir, _ := filepath.Abs(filepath.Join(filepath.Dir(wd), "testdata"))
