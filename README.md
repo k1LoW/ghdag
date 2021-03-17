@@ -340,7 +340,7 @@ ng:
   notify: error ${GHDAG_ACTION_OK_ERROR}
 env:
   SLACK_CHANNEL: workflow-alerts
-  SLACK_MENTIONS: [bob]
+  SLACK_MENTIONS: bob
 ```
 
 ##### Required environment variables
