@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/k1LoW/ghdag/env"
+	"github.com/k1LoW/ghdag/name"
 	"github.com/k1LoW/ghdag/task"
-	"github.com/k1LoW/ghdag/user"
 )
 
 type Config struct {
 	Tasks       task.Tasks       `yaml:"tasks"`
 	Env         env.Env          `yaml:"env"`
-	LinkedUsers user.LinkedUsers `yaml:"linkedUsers"`
+	LinkedNames name.LinkedNames `yaml:"linkedNames"`
 }
 
 func (c *Config) CheckSyntax() error {
