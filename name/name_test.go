@@ -6,6 +6,68 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestCheckSyntax(t *testing.T) {
+	tests := []struct {
+		names LinkedNames
+		want  bool
+	}{
+		{
+			LinkedNames{},
+			true,
+		},
+		{
+			LinkedNames{
+				&LinkedName{
+					Github: "bob",
+					Slack:  "bob_marly",
+				},
+			},
+			true,
+		},
+		{
+			LinkedNames{
+				&LinkedName{
+					Github: "bob",
+					Slack:  "bob",
+				},
+			},
+			false,
+		},
+		{
+			LinkedNames{
+				&LinkedName{
+					Github: "bob",
+					Slack:  "bob_marly",
+				},
+				&LinkedName{
+					Github: "bob",
+					Slack:  "bob_dylan",
+				},
+			},
+			false,
+		},
+		{
+			LinkedNames{
+				&LinkedName{
+					Github: "bob",
+					Slack:  "bob_marly",
+				},
+				&LinkedName{
+					Github: "bob_marly",
+					Slack:  "bob_dylan",
+				},
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		got, _ := tt.names.CheckSyntax()
+		if got != tt.want {
+			t.Errorf("got %v\nwant %v", got, tt.want)
+		}
+	}
+}
+
 func TestLinkedNames(t *testing.T) {
 	tests := []struct {
 		names      LinkedNames
