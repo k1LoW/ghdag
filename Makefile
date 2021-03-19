@@ -13,12 +13,15 @@ BUILD_LDFLAGS = -X $(PKG).commit=$(COMMIT) -X $(PKG).date=$(DATE)
 
 default: test
 
-ci: depsdev test sec
+ci: depsdev test integration sec
 
 test:
 	mockgen -source gh/gh.go -destination mock/mock_gh.go -package mock
 	mockgen -source slk/slk.go -destination mock/mock_slk.go -package mock
 	go test ./... -coverprofile=coverage.txt -covermode=count
+
+integration: build
+	./ghdag run testdata/test_workflow.yml
 
 sec:
 	gosec ./...
