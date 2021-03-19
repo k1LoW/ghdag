@@ -1,3 +1,8 @@
+## [v0.12.1](https://github.com/k1LoW/ghdag/compare/v0.12.0...v0.12.1) (2021-03-19)
+
+* Add variable `login` [#58](https://github.com/k1LoW/ghdag/pull/58) ([k1LoW](https://github.com/k1LoW))
+* Add variables `env.*` [#57](https://github.com/k1LoW/ghdag/pull/57) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.12.0](https://github.com/k1LoW/ghdag/compare/v0.11.1...v0.12.0) (2021-03-17)
 
 * Add `linkedNames:` for linking the GitHub user or team name to the Slack user or team account name. [#56](https://github.com/k1LoW/ghdag/pull/56) ([k1LoW](https://github.com/k1LoW))
