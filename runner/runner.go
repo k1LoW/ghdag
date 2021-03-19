@@ -69,7 +69,6 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.logPrefix = ""
 	r.log("Start session")
 	r.log(fmt.Sprintf("github.event_name: %s", r.event.Name))
-	r.debuglog(fmt.Sprintf("github.event: %s", r.event.RawPayload))
 	defer func() {
 		_ = r.revertEnv()
 		r.logPrefix = ""
@@ -254,6 +253,12 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 		}
 	}
 	variables = merge(variables, i.Dump())
+
+	if env.GetenvAsBool("DEBUG") {
+		v, _ := json.MarshalIndent(variables, "", "  ")
+		r.debuglog(fmt.Sprintf("variables of `if:` section:\n%s", v))
+	}
+
 	doOrNot, err := expr.Eval(fmt.Sprintf("(%s) == true", cond), variables)
 	if err != nil {
 		r.errlog(fmt.Sprintf("%s", err))
@@ -444,11 +449,10 @@ func (r *Runner) revertEnv() error {
 }
 
 type GitHubEvent struct {
-	Name       string
-	Number     int
-	State      string
-	Payload    interface{}
-	RawPayload []byte
+	Name    string
+	Number  int
+	State   string
+	Payload interface{}
 }
 
 func decodeGitHubEvent() (*GitHubEvent, error) {
@@ -490,7 +494,6 @@ func decodeGitHubEvent() (*GitHubEvent, error) {
 	}
 
 	i.Payload = payload
-	i.RawPayload = b
 
 	return i, nil
 }
