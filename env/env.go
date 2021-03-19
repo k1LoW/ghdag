@@ -95,3 +95,10 @@ func EnvMap() map[string]string {
 	}
 	return m
 }
+
+func GetenvAsBool(k string) bool {
+	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
+		return false
+	}
+	return true
+}

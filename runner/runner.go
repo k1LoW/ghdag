@@ -227,11 +227,7 @@ func (r *Runner) CheckIf(cond string, i *target.Target) bool {
 	if cond == "" {
 		return false
 	}
-	isCalled := true
-	k := "GHDAG_TASK_IS_CALLED"
-	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
-		isCalled = false
-	}
+	isCalled := env.GetenvAsBool("GHDAG_TASK_IS_CALLED")
 	now := time.Now()
 	variables := map[string]interface{}{
 		"year":      now.UTC().Year(),
@@ -308,8 +304,7 @@ func (r *Runner) perform(ctx context.Context, a *task.Action, i *target.Target, 
 }
 
 func (r *Runner) initSeed() {
-	k := "GHDAG_SAMPLE_WITH_SAME_SEED"
-	if os.Getenv(k) == "" || strings.ToLower(os.Getenv(k)) == "false" || os.Getenv(k) == "0" {
+	if !env.GetenvAsBool("GHDAG_SAMPLE_WITH_SAME_SEED") {
 		r.seed = time.Now().UnixNano()
 		r.excludeKey = -1
 	}
