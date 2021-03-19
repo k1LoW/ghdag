@@ -4,8 +4,8 @@ tasks:
     id: fetch-all-test
     if: true
     do:
-      run: echo -n "."
+      run: echo "."
     ok:
-      run: echo -n "."
+      run: echo "."
     ng:
-      run: echo -n "F"
+      run: echo "F"
