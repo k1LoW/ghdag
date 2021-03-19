@@ -1,0 +1,11 @@
+---
+tasks:
+  -
+    id: fetch-all-test
+    if: true
+    do:
+      run: echo "."
+    ok:
+      run: echo "."
+    ng:
+      run: echo "F"
