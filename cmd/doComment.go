@@ -31,8 +31,8 @@ import (
 // doCommentCmd represents the doComment command
 var doCommentCmd = &cobra.Command{
 	Use:   "comment [COMMENT]",
-	Short: "create the comment of the target issue or pull request",
-	Long:  "create the comment of the target issue or pull request.",
+	Short: "Create the comment of the target issue or pull request",
+	Long:  "Create the comment of the target issue or pull request.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		comment := strings.Join(args, " ")
 		ctx := context.Background()

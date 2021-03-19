@@ -30,8 +30,8 @@ import (
 // doAssigneesCmd represents the doAssignees command
 var doAssigneesCmd = &cobra.Command{
 	Use:   "assignees [ASSIGNEE...]",
-	Short: "update the assignees of the target issue or pull request",
-	Long:  "update the assignees of the target issue or pull request.",
+	Short: "Update the assignees of the target issue or pull request",
+	Long:  "Update the assignees of the target issue or pull request.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		r, t, err := initRunnerAndTask(ctx, number)

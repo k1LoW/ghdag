@@ -31,8 +31,8 @@ import (
 // doNotifyCmd represents the doNotify command
 var doNotifyCmd = &cobra.Command{
 	Use:   "notify [MESSAGE]",
-	Short: "send notify message to slack channel",
-	Long:  "send notify message to slack channel.",
+	Short: "Send notify message to slack channel",
+	Long:  "Send notify message to slack channel.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		message := strings.Join(args, " ")
 		ctx := context.Background()

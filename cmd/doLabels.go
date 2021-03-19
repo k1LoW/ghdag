@@ -30,8 +30,8 @@ import (
 // doLabelsCmd represents the doLabels command
 var doLabelsCmd = &cobra.Command{
 	Use:   "labels [LABEL...]",
-	Short: "update the labels of the target issue or pull request",
-	Long:  "update the labels of the target issue or pull request.",
+	Short: "Update the labels of the target issue or pull request",
+	Long:  "Update the labels of the target issue or pull request.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		r, t, err := initRunnerAndTask(ctx, number)

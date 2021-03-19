@@ -30,8 +30,8 @@ import (
 // doStateCmd represents the doState command
 var doStateCmd = &cobra.Command{
 	Use:       "state [STATE]",
-	Short:     "change state of the target issue or pull request",
-	Long:      "change state of the target issue or pull request.",
+	Short:     "Change state of the target issue or pull request",
+	Long:      "Change state of the target issue or pull request.",
 	Args:      cobra.ExactValidArgs(1),
 	ValidArgs: []string{"close", "merge"},
 	RunE: func(cmd *cobra.Command, args []string) error {

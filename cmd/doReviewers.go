@@ -30,8 +30,8 @@ import (
 // doReviewersCmd represents the doReviewers command
 var doReviewersCmd = &cobra.Command{
 	Use:   "reviewers [REVIEWER...]",
-	Short: "update the reviewers of the target issue or pull request",
-	Long:  "update the reviewers of the target issue or pull request.",
+	Short: "Update the reviewers of the target issue or pull request",
+	Long:  "Update the reviewers of the target issue or pull request.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		r, t, err := initRunnerAndTask(ctx, number)

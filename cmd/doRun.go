@@ -31,8 +31,8 @@ import (
 // doRunCmd represents the doRun command
 var doRunCmd = &cobra.Command{
 	Use:   "run [COMMAND...]",
-	Short: "execute command using `sh -c`",
-	Long:  "execute command using `sh -c`.",
+	Short: "Execute command using `sh -c`",
+	Long:  "Execute command using `sh -c`.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		r, _, err := initRunnerAndTask(ctx, number)
