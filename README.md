@@ -200,6 +200,7 @@ The variables available in the `if` section are as follows
 | `number_of_comments` | `int` | Number of comments |
 | `latest_comment_author` | `string` | Author of latest comment |
 | `latest_comment_body` | `string` | Body of latest comment |
+| `login` | `string` | User of `GITHUB_TOKEN` |
 | `is_called` | `true` | `true` if the target is called |
 | `caller_action_run_stdout` | `string` | Latest caller STDOUT of the `run` action |
 | `caller_action_run_stderr` | `string` | Latest caller STDERR of the `run` action |

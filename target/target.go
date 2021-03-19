@@ -33,6 +33,8 @@ type Target struct {
 	LatestCommentAuthor         string   `json:"latest_comment_author"`
 	LatestCommentBody           string   `json:"latest_comment_body"`
 	NumberOfConsecutiveComments int      `json:"-"`
+
+	Login string `json:"login"`
 }
 
 func (t *Target) NoCodeOwnerReviewers() []string {

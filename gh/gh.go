@@ -482,6 +482,7 @@ func buildTargetFromIssue(login string, i issueNode, now time.Time) (*target.Tar
 		LatestCommentAuthor:         string(latestComment.Author.Login),
 		LatestCommentBody:           string(latestComment.Body),
 		NumberOfConsecutiveComments: numComments,
+		Login:                       login,
 	}, nil
 }
 
@@ -591,6 +592,7 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		LatestCommentAuthor:         string(latestComment.Author.Login),
 		LatestCommentBody:           string(latestComment.Body),
 		NumberOfConsecutiveComments: numComments,
+		Login:                       login,
 	}, nil
 }
 
