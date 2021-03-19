@@ -190,9 +190,9 @@ The variables available in the `if` section are as follows
 | `code_owners_who_approved` | `array` | Code owners who approved the pull request |
 | `is_issue` | `bool` | `true` if the target type of the workflow is "Issue" |
 | `is_pull_request` | `bool` | `true` if the target type of the workflow is "Pull request" |
-| `is_approved` | `bool` | `true` if the pull request has received an approving review  |
-| `is_review_required` | `bool` | `true` if a review is required before the pull request can be merged |
-| `is_change_requested` | `bool` | `true` if changes have been requested on the pull request |
+| `is_approved` | `bool` | `true` if the pull request has been approved ( `Require pull request reviews before merging` option must be enabled ) |
+| `is_review_required` | `bool` | `true` if a review is required before the pull request can be merged ( `Require pull request reviews before merging` option must be enabled ) |
+| `is_change_requested` | `bool` | `true` if changes have been requested on the pull request ( `Require pull request reviews before merging` option must be enabled ) |
 | `mergeable` | `bool` | `true` if the pull request can be merged. |
 | `changed_files` | `int` | Number of changed files in this pull request |
 | `hours_elapsed_since_created` | `int` | Hours elspsed since the issue (pull request) created |
