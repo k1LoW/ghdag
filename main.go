@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/k1LoW/ghdag/cmd"
+	"github.com/k1LoW/ghdag/env"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -38,7 +39,7 @@ func main() {
 }
 
 func initLogger() {
-	if os.Getenv("DEBUG") == "" || os.Getenv("DEBUG") == "false" || os.Getenv("DEBUG") == "0" {
+	if !env.GetenvAsBool("DEBUG") {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
