@@ -1,3 +1,8 @@
+## [v0.13.1](https://github.com/k1LoW/ghdag/compare/v0.13.0...v0.13.1) (2021-03-22)
+
+* Remove variables `code_owners` `code_owners_who_approved` [#62](https://github.com/k1LoW/ghdag/pull/62) ([k1LoW](https://github.com/k1LoW))
+* Fix reviewers count [#61](https://github.com/k1LoW/ghdag/pull/61) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.13.0](https://github.com/k1LoW/ghdag/compare/v0.12.1...v0.13.0) (2021-03-19)
 
 * Dump `if:` section variables instead of github.event JSON [#60](https://github.com/k1LoW/ghdag/pull/60) ([k1LoW](https://github.com/k1LoW))
