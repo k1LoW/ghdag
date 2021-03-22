@@ -80,27 +80,47 @@ func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labe
 
 func (r *Runner) PerformAssigneesAction(ctx context.Context, i *target.Target, assignees []string) error {
 	assignees = r.config.LinkedNames.ToGithubNames(assignees)
-	as, err := r.github.ResolveUsers(ctx, assignees)
+	assignees, err := r.github.ResolveUsers(ctx, assignees)
 	if err != nil {
 		return err
 	}
+	assignees, err = r.sample(assignees, "GITHUB_ASSIGNEES_SAMPLE")
+	if err != nil {
+		return err
+	}
+	b := os.Getenv("GHDAG_ACTION_ASSIGNEES_BEHAVIOR")
+	switch b {
+	case "add":
+		r.log(fmt.Sprintf("Add assignees: %s", strings.Join(assignees, ", ")))
+		assignees = unique(append(assignees, i.Assignees...))
+	case "remove":
+		r.log(fmt.Sprintf("Remove assignees: %s", strings.Join(assignees, ", ")))
+		removed := []string{}
+		for _, l := range i.Assignees {
+			if contains(assignees, l) {
+				continue
+			}
+			removed = append(removed, l)
+		}
+		assignees = removed
+	case "replace", "":
+		r.log(fmt.Sprintf("Replace assignees: %s", strings.Join(assignees, ", ")))
+	default:
+		return fmt.Errorf("invalid behavior: %s", b)
+	}
+
 	sortStringSlice(i.Assignees)
-	as, err = r.sample(as, "GITHUB_ASSIGNEES_SAMPLE")
-	if err != nil {
-		return err
-	}
-	sortStringSlice(as)
-	r.log(fmt.Sprintf("Set assignees: %s", strings.Join(as, ", ")))
-	if cmp.Equal(i.Assignees, as) {
-		if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(as)); err != nil {
+	sortStringSlice(assignees)
+	if cmp.Equal(i.Assignees, assignees) {
+		if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(assignees)); err != nil {
 			return err
 		}
-		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(as, ", ")))
+		return erro.NewAlreadyInStateError(fmt.Errorf("the target is already in a state of being wanted: %s", strings.Join(assignees, ", ")))
 	}
-	if err := r.github.SetAssignees(ctx, i.Number, as); err != nil {
+	if err := r.github.SetAssignees(ctx, i.Number, assignees); err != nil {
 		return err
 	}
-	if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(as)); err != nil {
+	if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_UPDATED", env.Join(assignees)); err != nil {
 		return err
 	}
 	return nil
