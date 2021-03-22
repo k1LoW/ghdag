@@ -139,16 +139,24 @@ func TestPerformAssigneesAction(t *testing.T) {
 	r.github = m
 
 	tests := []struct {
-		in      []string
-		current []string
-		want    []string
-		wantErr interface{}
+		in       []string
+		current  []string
+		behavior string
+		want     []string
+		wantErr  interface{}
 	}{
-		{[]string{"alice", "bob"}, nil, []string{"alice", "bob"}, nil},
-		{[]string{"alice", "bob"}, []string{"alice", "bob"}, []string{"alice", "bob"}, &erro.AlreadyInStateError{}},
+		{[]string{"alice", "bob"}, nil, "", []string{"alice", "bob"}, nil},
+		{[]string{"alice", "bob"}, []string{"alice", "bob"}, "", []string{"alice", "bob"}, &erro.AlreadyInStateError{}},
+		{[]string{"alice", "bob"}, nil, "add", []string{"alice", "bob"}, nil},
+		{[]string{"bob"}, []string{"alice"}, "add", []string{"alice", "bob"}, nil},
+		{[]string{"alice", "bob"}, []string{"alice"}, "add", []string{"alice", "bob"}, nil},
+		{[]string{"alice"}, []string{"alice", "bob"}, "remove", []string{"bob"}, nil},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_ACTION_ASSIGNEES_BEHAVIOR", tt.behavior); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -156,9 +164,7 @@ func TestPerformAssigneesAction(t *testing.T) {
 		if err := faker.FakeData(i); err != nil {
 			t.Fatal(err)
 		}
-		if tt.current != nil {
-			i.Assignees = tt.current
-		}
+		i.Assignees = tt.current
 		m.EXPECT().ResolveUsers(gomock.Eq(ctx), gomock.Eq(tt.in)).Return(tt.in, nil)
 		if tt.wantErr == nil {
 			m.EXPECT().SetAssignees(gomock.Eq(ctx), gomock.Eq(i.Number), gomock.Eq(tt.want)).Return(nil)
