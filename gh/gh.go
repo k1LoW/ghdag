@@ -556,10 +556,11 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 	reviewersWhoApproved := []string{}
 	codeOwnersWhoApproved := []string{}
 	for _, r := range p.LatestReviews.Nodes {
+		u := string(r.Author.Login)
+		reviewers = append(reviewers, u)
 		if r.State != githubv4.PullRequestReviewStateApproved {
 			continue
 		}
-		u := string(r.Author.Login)
 		reviewersWhoApproved = append(reviewersWhoApproved, u)
 		if contains(codeOwners, u) {
 			codeOwnersWhoApproved = append(codeOwnersWhoApproved, u)
@@ -575,7 +576,7 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		Author:                      string(p.Author.Login),
 		Labels:                      labels,
 		Assignees:                   assignees,
-		Reviewers:                   reviewers,
+		Reviewers:                   unique(reviewers),
 		CodeOwners:                  codeOwners,
 		ReviewersWhoApproved:        reviewersWhoApproved,
 		CodeOwnersWhoApproved:       codeOwnersWhoApproved,
@@ -623,13 +624,14 @@ func contains(s []string, e string) bool {
 }
 
 func unique(in []string) []string {
+	u := []string{}
 	m := map[string]struct{}{}
 	for _, s := range in {
-		m[s] = struct{}{}
-	}
-	u := []string{}
-	for s := range m {
+		if _, ok := m[s]; ok {
+			continue
+		}
 		u = append(u, s)
+		m[s] = struct{}{}
 	}
 	return u
 }
