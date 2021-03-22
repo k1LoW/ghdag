@@ -137,6 +137,7 @@ type pullRequestNode struct {
 	ReviewDecision githubv4.PullRequestReviewDecision
 	ReviewRequests struct {
 		Nodes []struct {
+			AsCodeOwner       githubv4.Boolean
 			RequestedReviewer struct {
 				User struct {
 					Login githubv4.String
@@ -538,6 +539,7 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		assignees = append(assignees, string(a.Login))
 	}
 	reviewers := []string{}
+	codeOwners := []string{}
 	for _, r := range p.ReviewRequests.Nodes {
 		var k string
 		if r.RequestedReviewer.User.Login != "" {
@@ -547,8 +549,12 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 			k = fmt.Sprintf("%s/%s", string(r.RequestedReviewer.Team.Organization.Login), string(r.RequestedReviewer.Team.Slug))
 		}
 		reviewers = append(reviewers, k)
+		if bool(r.AsCodeOwner) {
+			codeOwners = append(codeOwners, k)
+		}
 	}
 	reviewersWhoApproved := []string{}
+	codeOwnersWhoApproved := []string{}
 	for _, r := range p.LatestReviews.Nodes {
 		u := string(r.Author.Login)
 		reviewers = append(reviewers, u)
@@ -556,6 +562,9 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 			continue
 		}
 		reviewersWhoApproved = append(reviewersWhoApproved, u)
+		if contains(codeOwners, u) {
+			codeOwnersWhoApproved = append(codeOwnersWhoApproved, u)
+		}
 	}
 
 	return &target.Target{
@@ -568,7 +577,9 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		Labels:                      labels,
 		Assignees:                   assignees,
 		Reviewers:                   unique(reviewers),
+		CodeOwners:                  codeOwners,
 		ReviewersWhoApproved:        reviewersWhoApproved,
+		CodeOwnersWhoApproved:       codeOwnersWhoApproved,
 		IsIssue:                     false,
 		IsPullRequest:               true,
 		IsApproved:                  isApproved,
