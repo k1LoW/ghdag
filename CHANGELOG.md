@@ -1,3 +1,8 @@
+## [v0.14.0](https://github.com/k1LoW/ghdag/compare/v0.13.1...v0.14.0) (2021-03-23)
+
+* Add variables `code_owners` `code_owners_who_approved` [#64](https://github.com/k1LoW/ghdag/pull/64) ([k1LoW](https://github.com/k1LoW))
+* Add `GHDAG_ACTION_ASSIGNEES_BEHAVIOR` to set behavior of the `assignees:` action [#63](https://github.com/k1LoW/ghdag/pull/63) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.13.1](https://github.com/k1LoW/ghdag/compare/v0.13.0...v0.13.1) (2021-03-22)
 
 * Remove variables `code_owners` `code_owners_who_approved` [#62](https://github.com/k1LoW/ghdag/pull/62) ([k1LoW](https://github.com/k1LoW))
