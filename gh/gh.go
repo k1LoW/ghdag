@@ -578,6 +578,7 @@ func (c *Client) buildTargetFromPullRequest(ctx context.Context, login string, p
 		}
 		reviewersWhoApproved = append(reviewersWhoApproved, u)
 	}
+	reviewers = unique(reviewers)
 
 	if len(reviewersWhoApproved) > 0 {
 		// re-calc code_owners*
@@ -608,7 +609,7 @@ func (c *Client) buildTargetFromPullRequest(ctx context.Context, login string, p
 		Author:                      string(p.Author.Login),
 		Labels:                      labels,
 		Assignees:                   assignees,
-		Reviewers:                   unique(reviewers),
+		Reviewers:                   reviewers,
 		CodeOwners:                  codeOwners,
 		ReviewersWhoApproved:        reviewersWhoApproved,
 		CodeOwnersWhoApproved:       codeOwnersWhoApproved,
