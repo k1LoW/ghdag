@@ -11,6 +11,7 @@ require (
 	github.com/golang/mock v1.5.0
 	github.com/google/go-cmp v0.3.0
 	github.com/google/go-github/v33 v33.0.0
+	github.com/hairyhenderson/go-codeowners v0.2.3-0.20201026200250-cdc7c0759690
 	github.com/k1LoW/exec v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.20.0

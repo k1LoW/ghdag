@@ -2,6 +2,7 @@ package gh
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v33/github"
+	"github.com/hairyhenderson/go-codeowners"
 	"github.com/k1LoW/ghdag/erro"
 	"github.com/k1LoW/ghdag/target"
 	"github.com/shurcooL/githubv4"
@@ -126,6 +128,7 @@ type pullRequestNode struct {
 	Author struct {
 		Login githubv4.String
 	}
+	HeadRefName    githubv4.String
 	Number         githubv4.Int
 	State          githubv4.String
 	Title          githubv4.String
@@ -137,6 +140,7 @@ type pullRequestNode struct {
 	ReviewDecision githubv4.PullRequestReviewDecision
 	ReviewRequests struct {
 		Nodes []struct {
+			AsCodeOwner       githubv4.Boolean
 			RequestedReviewer struct {
 				User struct {
 					Login githubv4.String
@@ -182,6 +186,18 @@ type pullRequestNode struct {
 			HasNextPage bool
 		}
 	} `graphql:"comments(first: $limit, orderBy: {direction: DESC, field: UPDATED_AT})"`
+}
+
+type pullRequestFilesNode struct {
+	Files struct {
+		Nodes []struct {
+			Path githubv4.String
+		}
+		PageInfo struct {
+			HasNextPage bool
+			EndCursor   githubv4.String
+		}
+	} `graphql:"files(first: $limit, after: $cursor)"`
 }
 
 func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
@@ -240,7 +256,7 @@ func (c *Client) FetchTargets(ctx context.Context) (target.Targets, error) {
 			// Skip draft pull request
 			continue
 		}
-		t, err := buildTargetFromPullRequest(login, p, now)
+		t, err := c.buildTargetFromPullRequest(ctx, login, p, now)
 		if err != nil {
 			return nil, err
 		}
@@ -294,7 +310,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 		if bool(p.IsDraft) {
 			return nil, erro.NewNotOpenError(fmt.Errorf("pull request #%d is draft", int(p.Number)))
 		}
-		return buildTargetFromPullRequest(login, p, now)
+		return c.buildTargetFromPullRequest(ctx, login, p, now)
 	}
 }
 
@@ -485,7 +501,7 @@ func buildTargetFromIssue(login string, i issueNode, now time.Time) (*target.Tar
 	}, nil
 }
 
-func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) (*target.Target, error) {
+func (c *Client) buildTargetFromPullRequest(ctx context.Context, login string, p pullRequestNode, now time.Time) (*target.Target, error) {
 	n := int(p.Number)
 
 	if p.Comments.PageInfo.HasNextPage {
@@ -538,6 +554,8 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		assignees = append(assignees, string(a.Login))
 	}
 	reviewers := []string{}
+	codeOwners := []string{}
+	codeOwnersWhoApproved := []string{}
 	for _, r := range p.ReviewRequests.Nodes {
 		var k string
 		if r.RequestedReviewer.User.Login != "" {
@@ -547,6 +565,9 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 			k = fmt.Sprintf("%s/%s", string(r.RequestedReviewer.Team.Organization.Login), string(r.RequestedReviewer.Team.Slug))
 		}
 		reviewers = append(reviewers, k)
+		if bool(r.AsCodeOwner) {
+			codeOwners = append(codeOwners, k)
+		}
 	}
 	reviewersWhoApproved := []string{}
 	for _, r := range p.LatestReviews.Nodes {
@@ -556,6 +577,27 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 			continue
 		}
 		reviewersWhoApproved = append(reviewersWhoApproved, u)
+	}
+	reviewers = unique(reviewers)
+
+	if len(reviewersWhoApproved) > 0 {
+		// re-calc code_owners*
+		codeOwners = []string{}
+		// calcedCodeOwners contains users that exist in the CODEOWNERS file but do not actually exist or do not have permissions.
+		calcedCodeOwners, err := c.getCodeOwners(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range reviewersWhoApproved {
+			if contains(calcedCodeOwners, u) {
+				codeOwnersWhoApproved = append(codeOwnersWhoApproved, u)
+			}
+		}
+		for _, u := range reviewers {
+			if contains(calcedCodeOwners, u) {
+				codeOwners = append(codeOwners, u)
+			}
+		}
 	}
 
 	return &target.Target{
@@ -567,8 +609,10 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		Author:                      string(p.Author.Login),
 		Labels:                      labels,
 		Assignees:                   assignees,
-		Reviewers:                   unique(reviewers),
+		Reviewers:                   reviewers,
+		CodeOwners:                  codeOwners,
 		ReviewersWhoApproved:        reviewersWhoApproved,
+		CodeOwnersWhoApproved:       codeOwnersWhoApproved,
 		IsIssue:                     false,
 		IsPullRequest:               true,
 		IsApproved:                  isApproved,
@@ -584,6 +628,84 @@ func buildTargetFromPullRequest(login string, p pullRequestNode, now time.Time) 
 		NumberOfConsecutiveComments: numComments,
 		Login:                       login,
 	}, nil
+}
+
+func (c *Client) getCodeOwners(ctx context.Context, p pullRequestNode) ([]string, error) {
+	// Get CODEOWNERS file
+	var cc string
+	for _, path := range []string{".github/CODEOWNERS", "docs/CODEOWNERS"} {
+		f, _, _, err := c.v3.Repositories.GetContents(ctx, c.owner, c.repo, path, &github.RepositoryContentGetOptions{
+			Ref: string(p.HeadRefName),
+		})
+		if err != nil {
+			continue
+		}
+
+		switch *f.Encoding {
+		case "base64":
+			if f.Content == nil {
+				break
+			}
+			c, err := base64.StdEncoding.DecodeString(*f.Content)
+			if err != nil {
+				break
+			}
+			cc = string(c)
+		case "":
+			if f.Content == nil {
+				cc = ""
+			} else {
+				cc = *f.Content
+			}
+		default:
+			break
+		}
+		break
+	}
+
+	if cc == "" {
+		return []string{}, nil
+	}
+
+	d, err := codeowners.FromReader(strings.NewReader(cc), ".")
+	if err != nil {
+		return nil, err
+	}
+
+	var cursor string
+	co := []string{}
+
+	var q struct {
+		Repogitory struct {
+			PullRequest pullRequestFilesNode `graphql:"pullRequest(number: $number)"`
+		} `graphql:"repository(owner: $owner, name: $repo)"`
+	}
+
+	for {
+		variables := map[string]interface{}{
+			"owner":  githubv4.String(c.owner),
+			"repo":   githubv4.String(c.repo),
+			"number": p.Number,
+			"limit":  githubv4.Int(limit),
+			"cursor": githubv4.String(cursor),
+		}
+		if err := c.v4.Query(ctx, &q, variables); err != nil {
+			return nil, err
+		}
+		for _, f := range q.Repogitory.PullRequest.Files.Nodes {
+			co = append(co, d.Owners(string(f.Path))...)
+		}
+		if !q.Repogitory.PullRequest.Files.PageInfo.HasNextPage {
+			break
+		}
+		cursor = string(q.Repogitory.PullRequest.Files.PageInfo.EndCursor)
+	}
+
+	codeOwners := []string{}
+	for _, o := range unique(co) {
+		codeOwners = append(codeOwners, strings.TrimPrefix(o, "@"))
+	}
+	return codeOwners, nil
 }
 
 func httpClient(token string) *http.Client {
