@@ -47,6 +47,19 @@ var initCmd = &cobra.Command{
 		if _, err := os.Lstat(path); err == nil {
 			return fmt.Errorf("%s already exist", path)
 		}
+		dir := filepath.Dir(path)
+		if _, err := os.Lstat(dir); err != nil {
+			yn := prompter.YN(fmt.Sprintf("%s does not exist. Do you create it?", dir), true)
+			if !yn {
+				return nil
+			}
+			if err := os.MkdirAll(dir, 0750); err != nil {
+				return err
+			}
+		}
+		if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+			return err
+		}
 		file, err := os.Create(filepath.Clean(path))
 		if err != nil {
 			return err
