@@ -11,13 +11,12 @@ jobs:
   run-workflow:
     name: Run workflow
     runs-on: ubuntu-latest
-    container: ghcr.io/k1low/ghdag:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run ghdag
-        run: ghdag run .ghdag.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: k1LoW/ghdag-action@main
+        with:
+          workflow-file: .ghdag.yml
