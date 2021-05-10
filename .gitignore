@@ -2,3 +2,4 @@
 /ghdag
 /dist/
 coverage.txt
+.go-version
