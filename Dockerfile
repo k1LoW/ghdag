@@ -1,6 +1,10 @@
-FROM alpine:3.13
+FROM debian:buster-slim
 
-RUN apk add --no-cache bash curl git
+RUN apt-get update && apt-get install -y \
+  curl \
+  git \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "-h" ]
@@ -8,5 +12,5 @@ CMD [ "-h" ]
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-COPY ghdag_*.apk /tmp/
-RUN apk add --allow-untrusted /tmp/ghdag_*.apk
+COPY ghdag_*.deb /tmp/
+RUN dpkg -i /tmp/ghdag_*.deb
