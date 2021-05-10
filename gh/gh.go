@@ -53,8 +53,8 @@ func NewClient() (*Client, error) {
 
 	// REST API Client
 	v3c := github.NewClient(httpClient(token))
-	if v4ep := os.Getenv("GITHUB_API_URL"); v4ep != "" {
-		baseEndpoint, err := url.Parse(v4ep)
+	if v3ep := os.Getenv("GITHUB_API_URL"); v3ep != "" {
+		baseEndpoint, err := url.Parse(v3ep)
 		if err != nil {
 			return nil, err
 		}

@@ -4,14 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
-)
-
-var (
-	re  = regexp.MustCompile(`\${\s*([^{}]+)\s*}`)
-	re2 = regexp.MustCompile(`{{([^\.])`)
-	re3 = regexp.MustCompile(`__GHDAG__(.)`)
 )
 
 type Env map[string]string
