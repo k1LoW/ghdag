@@ -1,3 +1,6 @@
+## [v0.15.1](https://github.com/k1LoW/ghdag/compare/v0.15.0...v0.15.1) (2021-05-10)
+
+
 ## [v0.15.0](https://github.com/k1LoW/ghdag/compare/v0.14.0...v0.15.0) (2021-05-10)
 
 * Use ghdag-action [#67](https://github.com/k1LoW/ghdag/pull/67) ([k1LoW](https://github.com/k1LoW))
