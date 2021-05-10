@@ -39,7 +39,7 @@ type Runner struct {
 }
 
 func New(c *config.Config) (*Runner, error) {
-	e, _ := decodeGitHubEvent()
+	e, _ := DecodeGitHubEvent()
 	if c == nil {
 		c = config.New()
 	}
@@ -455,7 +455,7 @@ type GitHubEvent struct {
 	Payload interface{}
 }
 
-func decodeGitHubEvent() (*GitHubEvent, error) {
+func DecodeGitHubEvent() (*GitHubEvent, error) {
 	p := os.Getenv("GITHUB_EVENT_PATH")
 	n := os.Getenv("GITHUB_EVENT_NAME")
 	i := &GitHubEvent{
