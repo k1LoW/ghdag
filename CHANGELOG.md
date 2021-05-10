@@ -1,3 +1,9 @@
+## [v0.15.0](https://github.com/k1LoW/ghdag/compare/v0.14.0...v0.15.0) (2021-05-10)
+
+* Use ghdag-action [#67](https://github.com/k1LoW/ghdag/pull/67) ([k1LoW](https://github.com/k1LoW))
+* [BREAKING]Change base image ( alpine -> debian ) [#66](https://github.com/k1LoW/ghdag/pull/66) ([k1LoW](https://github.com/k1LoW))
+* Create ghdag config dir when it does not exist [#65](https://github.com/k1LoW/ghdag/pull/65) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.14.0](https://github.com/k1LoW/ghdag/compare/v0.13.1...v0.14.0) (2021-03-23)
 
 * Add variables `code_owners` `code_owners_who_approved` [#64](https://github.com/k1LoW/ghdag/pull/64) ([k1LoW](https://github.com/k1LoW))
