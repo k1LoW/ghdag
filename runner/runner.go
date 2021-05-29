@@ -457,7 +457,13 @@ type GitHubEvent struct {
 
 func DecodeGitHubEvent() (*GitHubEvent, error) {
 	p := os.Getenv("GITHUB_EVENT_PATH")
+	if p == "" {
+		return nil, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_PATH")
+	}
 	n := os.Getenv("GITHUB_EVENT_NAME")
+	if n == "" {
+		return nil, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_NAME")
+	}
 	i := &GitHubEvent{
 		Name: n,
 	}
