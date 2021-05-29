@@ -1,3 +1,7 @@
+## [v0.15.2](https://github.com/k1LoW/ghdag/compare/v0.15.1...v0.15.2) (2021-05-29)
+
+* Add assert to runner.DecodeGitHubEvent() [#68](https://github.com/k1LoW/ghdag/pull/68) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.15.1](https://github.com/k1LoW/ghdag/compare/v0.15.0...v0.15.1) (2021-05-10)
 
 
