@@ -16,6 +16,7 @@ import (
 	"github.com/hairyhenderson/go-codeowners"
 	"github.com/k1LoW/ghdag/erro"
 	"github.com/k1LoW/ghdag/target"
+	"github.com/rs/zerolog/log"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
@@ -81,11 +82,21 @@ func NewClient() (*Client, error) {
 	}
 	splitted := strings.Split(ownerrepo, "/")
 
+	owner := splitted[0]
+	repo := splitted[1]
+
+	_, res, err := v3c.Repositories.Get(ctx, owner, repo)
+	if err != nil {
+		return nil, err
+	}
+	scopes := strings.Split(res.Header.Get("X-OAuth-Scopes"), ", ")
+	log.Debug().Msg(fmt.Sprintf("the scopes your token has authorized: '%s'", strings.Join(scopes, "', '")))
+
 	return &Client{
 		v3:    v3c,
 		v4:    v4c,
-		owner: splitted[0],
-		repo:  splitted[1],
+		owner: owner,
+		repo:  repo,
 	}, nil
 }
 
