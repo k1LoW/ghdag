@@ -456,16 +456,15 @@ type GitHubEvent struct {
 }
 
 func DecodeGitHubEvent() (*GitHubEvent, error) {
-	p := os.Getenv("GITHUB_EVENT_PATH")
-	if p == "" {
-		return nil, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_PATH")
-	}
+	i := &GitHubEvent{}
 	n := os.Getenv("GITHUB_EVENT_NAME")
 	if n == "" {
-		return nil, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_NAME")
+		return i, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_NAME")
 	}
-	i := &GitHubEvent{
-		Name: n,
+	i.Name = n
+	p := os.Getenv("GITHUB_EVENT_PATH")
+	if p == "" {
+		return i, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_PATH")
 	}
 	b, err := ioutil.ReadFile(filepath.Clean(p))
 	if err != nil {

@@ -122,6 +122,7 @@ func TestDetectTargetNumber(t *testing.T) {
 		if err := env.Revert(envCache); err != nil {
 			t.Fatal(err)
 		}
+		os.Setenv("GITHUB_EVENT_NAME", "test")
 		os.Setenv("GITHUB_EVENT_PATH", filepath.Join(testdataDir(), tt.path))
 		got, err := DecodeGitHubEvent()
 		if tt.wantErr && err != nil {
