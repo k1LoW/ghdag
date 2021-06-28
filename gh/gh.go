@@ -86,11 +86,11 @@ func NewClient() (*Client, error) {
 	repo := splitted[1]
 
 	_, res, err := v3c.Repositories.Get(ctx, owner, repo)
+	scopes := strings.Split(res.Header.Get("X-OAuth-Scopes"), ", ")
+	log.Debug().Msg(fmt.Sprintf("the scopes your token has authorized: '%s'", strings.Join(scopes, "', '")))
 	if err != nil {
 		return nil, err
 	}
-	scopes := strings.Split(res.Header.Get("X-OAuth-Scopes"), ", ")
-	log.Debug().Msg(fmt.Sprintf("the scopes your token has authorized: '%s'", strings.Join(scopes, "', '")))
 
 	return &Client{
 		v3:    v3c,
