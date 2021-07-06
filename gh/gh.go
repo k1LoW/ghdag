@@ -3,11 +3,14 @@ package gh
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -717,6 +720,61 @@ func (c *Client) getCodeOwners(ctx context.Context, p pullRequestNode) ([]string
 		codeOwners = append(codeOwners, strings.TrimPrefix(o, "@"))
 	}
 	return codeOwners, nil
+}
+
+type GitHubEvent struct {
+	Name    string
+	Number  int
+	State   string
+	Payload interface{}
+}
+
+func DecodeGitHubEvent() (*GitHubEvent, error) {
+	i := &GitHubEvent{}
+	n := os.Getenv("GITHUB_EVENT_NAME")
+	if n == "" {
+		return i, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_NAME")
+	}
+	i.Name = n
+	p := os.Getenv("GITHUB_EVENT_PATH")
+	if p == "" {
+		return i, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_PATH")
+	}
+	b, err := ioutil.ReadFile(filepath.Clean(p))
+	if err != nil {
+		return i, err
+	}
+	s := struct {
+		PullRequest struct {
+			Number int    `json:"number,omitempty"`
+			State  string `json:"state,omitempty"`
+		} `json:"pull_request,omitempty"`
+		Issue struct {
+			Number int    `json:"number,omitempty"`
+			State  string `json:"state,omitempty"`
+		} `json:"issue,omitempty"`
+	}{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return i, err
+	}
+	switch {
+	case s.PullRequest.Number > 0:
+		i.Number = s.PullRequest.Number
+		i.State = s.PullRequest.State
+	case s.Issue.Number > 0:
+		i.Number = s.Issue.Number
+		i.State = s.Issue.State
+	}
+
+	var payload interface{}
+
+	if err := json.Unmarshal(b, &payload); err != nil {
+		return i, err
+	}
+
+	i.Payload = payload
+
+	return i, nil
 }
 
 func httpClient(token string) *http.Client {
