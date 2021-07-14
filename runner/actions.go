@@ -19,14 +19,15 @@ import (
 )
 
 func (r *Runner) PerformRunAction(ctx context.Context, _ *target.Target, command string) error {
+	r.log(fmt.Sprintf("Run command: %s", command))
 	c := exec.CommandContext(ctx, "sh", "-c", command)
 	c.Env = os.Environ()
 	outbuf := new(bytes.Buffer)
-	outmr := io.MultiWriter(os.Stdout, outbuf)
-	c.Stdout = outmr
+	outmw := io.MultiWriter(os.Stdout, outbuf)
+	c.Stdout = outmw
 	errbuf := new(bytes.Buffer)
-	errmr := io.MultiWriter(os.Stderr, errbuf)
-	c.Stderr = errmr
+	errmw := io.MultiWriter(os.Stderr, errbuf)
+	c.Stderr = errmw
 	if err := c.Run(); err != nil {
 		return err
 	}
