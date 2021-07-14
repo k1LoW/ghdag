@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,7 +29,7 @@ type Runner struct {
 	config     *config.Config
 	github     gh.GhClient
 	slack      slk.SlkClient
-	event      *GitHubEvent
+	event      *gh.GitHubEvent
 	envCache   []string
 	logPrefix  string
 	seed       int64
@@ -39,7 +37,7 @@ type Runner struct {
 }
 
 func New(c *config.Config) (*Runner, error) {
-	e, _ := DecodeGitHubEvent()
+	e, _ := gh.DecodeGitHubEvent()
 	if c == nil {
 		c = config.New()
 	}
@@ -446,61 +444,6 @@ func (r *Runner) debuglog(m string) {
 
 func (r *Runner) revertEnv() error {
 	return env.Revert(r.envCache)
-}
-
-type GitHubEvent struct {
-	Name    string
-	Number  int
-	State   string
-	Payload interface{}
-}
-
-func DecodeGitHubEvent() (*GitHubEvent, error) {
-	i := &GitHubEvent{}
-	n := os.Getenv("GITHUB_EVENT_NAME")
-	if n == "" {
-		return i, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_NAME")
-	}
-	i.Name = n
-	p := os.Getenv("GITHUB_EVENT_PATH")
-	if p == "" {
-		return i, fmt.Errorf("env %s is not set.", "GITHUB_EVENT_PATH")
-	}
-	b, err := ioutil.ReadFile(filepath.Clean(p))
-	if err != nil {
-		return i, err
-	}
-	s := struct {
-		PullRequest struct {
-			Number int    `json:"number,omitempty"`
-			State  string `json:"state,omitempty"`
-		} `json:"pull_request,omitempty"`
-		Issue struct {
-			Number int    `json:"number,omitempty"`
-			State  string `json:"state,omitempty"`
-		} `json:"issue,omitempty"`
-	}{}
-	if err := json.Unmarshal(b, &s); err != nil {
-		return i, err
-	}
-	switch {
-	case s.PullRequest.Number > 0:
-		i.Number = s.PullRequest.Number
-		i.State = s.PullRequest.State
-	case s.Issue.Number > 0:
-		i.Number = s.Issue.Number
-		i.State = s.Issue.State
-	}
-
-	var payload interface{}
-
-	if err := json.Unmarshal(b, &payload); err != nil {
-		return i, err
-	}
-
-	i.Payload = payload
-
-	return i, nil
 }
 
 func unique(in []string) []string {
