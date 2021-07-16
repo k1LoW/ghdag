@@ -37,7 +37,7 @@ func TestPerformRunAction(t *testing.T) {
 	}{
 		{"echo hello", "hello\n", "", false},
 		{"echo world 1>&2", "", "world\n", false},
-		{"unknowncmd", "", "sh: unknowncmd: command not found\n", true},
+		{"unknowncmd", "", "not found\n", true},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -51,11 +51,11 @@ func TestPerformRunAction(t *testing.T) {
 		if err := r.PerformRunAction(ctx, i, tt.in); (err == nil) == tt.wantErr {
 			t.Errorf("got %v\nwantErr %v", err, tt.wantErr)
 		}
-		if got := os.Getenv("GHDAG_ACTION_RUN_STDOUT"); got != tt.wantStdout {
+		if got := os.Getenv("GHDAG_ACTION_RUN_STDOUT"); !strings.Contains(got, tt.wantStdout) {
 			t.Errorf("got %v\nwant %v", got, tt.wantStdout)
 		}
-		if got := os.Getenv("GHDAG_ACTION_RUN_STDERR"); got != tt.wantStderr {
-			t.Errorf("got %v\nwant %v", got, tt.wantStdout)
+		if got := os.Getenv("GHDAG_ACTION_RUN_STDERR"); !strings.Contains(got, tt.wantStderr) {
+			t.Errorf("got %v\nwant %v", got, tt.wantStderr)
 		}
 	}
 }
@@ -522,8 +522,7 @@ func TestPerformRunActionRetry(t *testing.T) {
 		{"2", "", "", "run\nrun\nrun\n"},
 		{"3", "0.01sec", "", "run\n"},
 		{"", "0.01sec", "", "run\n"},
-		{"", "0.25sec", "", "run\nrun\n"},
-		{"", "0.25sec", "0.1sec", "run\n"},
+		{"", "0.25sec", "0.5sec", "run\n"},
 	}
 	for idx, tt := range tests {
 		if err := r.revertEnv(); err != nil {
