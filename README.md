@@ -399,12 +399,12 @@ tasks:
 | `GITHUB_REVIEWERS` | Additional Reviewers to the list in the `reviewers:` action | - |
 | `GHDAG_ACTION_LABELS_BEHAVIOR` | Behavior of the `labels:` action ( `replace` (=default), `add`, `remove` ) | - |
 | `GHDAG_ACTION_ASSIGNEES_BEHAVIOR` | Behavior of the `assignees:` action ( `replace` (=default), `add`, `remove` ) | - |
-| `GHDAG_ACTION_COMMENT_MAX` | Maximum number of consecutive comments by the same login ( default: 5 ) | - |
+| `GHDAG_ACTION_COMMENT_MAX` | Maximum number of consecutive comments by the same login ( default: `5` ) | - |
 | `GHDAG_ACTION_RUN_RETRY_MAX` | Maximum number of retries for the `run:` action ( default: none ) | - |
-| `GHDAG_ACTION_RUN_RETRY_MIN_INTERVAL` | Minimum retry interval for the `run:` action ( default: 0 ) | - |
-| `GHDAG_ACTION_RUN_RETRY_MAX_INTERVAL` | Maximum retry interval for the `run:` action ( default: 0 ) | - |
-| `GHDAG_ACTION_RUN_RETRY_JITTER_FACTOR` | Jitter factor of retries for the `run:` action ( default: 0.05 ) | - |
-| `GHDAG_ACTION_RUN_RETRY_TIMEOUT` | Timeout for all retries execution time for the `run:` action ( default: 300 sec ) | - |
+| `GHDAG_ACTION_RUN_RETRY_MIN_INTERVAL` | Minimum retry interval for the `run:` action ( default: `0 sec` ) | - |
+| `GHDAG_ACTION_RUN_RETRY_MAX_INTERVAL` | Maximum retry interval for the `run:` action ( default: `0 sec` ) | - |
+| `GHDAG_ACTION_RUN_RETRY_JITTER_FACTOR` | Jitter factor of retries for the `run:` action ( default: `0.05` ) | - |
+| `GHDAG_ACTION_RUN_RETRY_TIMEOUT` | Timeout for all retries execution time for the `run:` action ( default: `300 sec` ) | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
