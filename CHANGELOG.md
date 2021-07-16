@@ -1,3 +1,9 @@
+## [v0.16.0](https://github.com/k1LoW/ghdag/compare/v0.15.2...v0.16.0) (2021-07-16)
+
+* Support retry in `run:` action [#71](https://github.com/k1LoW/ghdag/pull/71) ([k1LoW](https://github.com/k1LoW))
+* mv runner.DecodeGitHubEvent to gh.DecodeGitHubEvent [#70](https://github.com/k1LoW/ghdag/pull/70) ([k1LoW](https://github.com/k1LoW))
+* Add log for scopes [#69](https://github.com/k1LoW/ghdag/pull/69) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.15.2](https://github.com/k1LoW/ghdag/compare/v0.15.1...v0.15.2) (2021-05-29)
 
 * Add assert to runner.DecodeGitHubEvent() [#68](https://github.com/k1LoW/ghdag/pull/68) ([k1LoW](https://github.com/k1LoW))
