@@ -12,7 +12,9 @@ require (
 	github.com/google/go-cmp v0.5.5
 	github.com/google/go-github/v33 v33.0.0
 	github.com/hairyhenderson/go-codeowners v0.2.3-0.20201026200250-cdc7c0759690
-	github.com/k1LoW/exec v0.1.1
+	github.com/k1LoW/duration v1.1.0
+	github.com/k1LoW/exec v0.2.0
+	github.com/lestrrat-go/backoff/v2 v2.0.8
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.20.0
 	github.com/shurcooL/githubv4 v0.0.0-20201206200315-234843c633fa

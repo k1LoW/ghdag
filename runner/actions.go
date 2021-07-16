@@ -9,35 +9,101 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/k1LoW/duration"
 	"github.com/k1LoW/exec"
 	"github.com/k1LoW/ghdag/env"
 	"github.com/k1LoW/ghdag/erro"
 	"github.com/k1LoW/ghdag/target"
 	"github.com/k1LoW/ghdag/task"
+	"github.com/lestrrat-go/backoff/v2"
 )
 
 func (r *Runner) PerformRunAction(ctx context.Context, _ *target.Target, command string) error {
 	r.log(fmt.Sprintf("Run command: %s", command))
-	c := exec.CommandContext(ctx, "sh", "-c", command)
-	c.Env = os.Environ()
-	outbuf := new(bytes.Buffer)
-	outmw := io.MultiWriter(os.Stdout, outbuf)
-	c.Stdout = outmw
-	errbuf := new(bytes.Buffer)
-	errmw := io.MultiWriter(os.Stderr, errbuf)
-	c.Stderr = errmw
-	if err := c.Run(); err != nil {
-		return err
+	max := 0
+	timeout := 300 * time.Second
+	p := backoff.Null()
+	if os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX") != "" || os.Getenv("GHDAG_ACTION_RUN_RETRY_TIMEOUT") != "" {
+		mini := 0 * time.Second
+		maxi := 0 * time.Second
+		jf := 0.05
+		if os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX") != "" {
+			i, err := strconv.Atoi(os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX"))
+			if err != nil {
+				return err
+			}
+			max = i
+		}
+		if os.Getenv("GHDAG_ACTION_RUN_RETRY_TIMEOUT") != "" {
+			t, err := duration.Parse(os.Getenv("GHDAG_ACTION_RUN_RETRY_TIMEOUT"))
+			if err != nil {
+				return err
+			}
+			timeout = t
+		}
+		if os.Getenv("GHDAG_ACTION_RUN_RETRY_MIN_INTERVAL") != "" {
+			t, err := duration.Parse(os.Getenv("GHDAG_ACTION_RUN_RETRY_MIN_INTERVAL"))
+			if err != nil {
+				return err
+			}
+			mini = t
+		}
+		if os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX_INTERVAL") != "" {
+			t, err := duration.Parse(os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX_INTERVAL"))
+			if err != nil {
+				return err
+			}
+			maxi = t
+		}
+		if os.Getenv("GHDAG_ACTION_RUN_RETRY_JITTER_FACTOR") != "" {
+			f, err := strconv.ParseFloat(os.Getenv("GHDAG_ACTION_RUN_RETRY_JITTER_FACTOR"), 64)
+			if err != nil {
+				return err
+			}
+			jf = f
+		}
+		p = backoff.Exponential(
+			backoff.WithMinInterval(mini),
+			backoff.WithMaxInterval(maxi),
+			backoff.WithJitterFactor(jf),
+		)
 	}
-	if err := os.Setenv("GHDAG_ACTION_RUN_STDOUT", outbuf.String()); err != nil {
-		return err
+	ctx2, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	c := p.Start(ctx2)
+	count := 0
+	var err error
+	for backoff.Continue(c) {
+		c := exec.CommandContext(ctx2, "sh", "-c", command)
+		c.Env = os.Environ()
+		outbuf := new(bytes.Buffer)
+		outmw := io.MultiWriter(os.Stdout, outbuf)
+		c.Stdout = outmw
+		errbuf := new(bytes.Buffer)
+		errmw := io.MultiWriter(os.Stderr, errbuf)
+		c.Stderr = errmw
+		err = c.Run()
+		count += 1
+		if err := os.Setenv("GHDAG_ACTION_RUN_STDOUT", outbuf.String()); err != nil {
+			return err
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_STDERR", errbuf.String()); err != nil {
+			return err
+		}
+		if err != nil {
+			if max > 0 && count > max {
+				r.log(fmt.Sprintf("Exceeded max retry count: %d", max))
+				break
+			}
+			continue
+		}
+		return nil
 	}
-	if err := os.Setenv("GHDAG_ACTION_RUN_STDERR", errbuf.String()); err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *Runner) PerformLabelsAction(ctx context.Context, i *target.Target, labels []string) error {

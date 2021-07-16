@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestPerformRunAction(t *testing.T) {
 	}{
 		{"echo hello", "hello\n", "", false},
 		{"echo world 1>&2", "", "world\n", false},
-		{"unknowncmd", "", "", true},
+		{"unknowncmd", "", "not found\n", true},
 	}
 	for _, tt := range tests {
 		if err := r.revertEnv(); err != nil {
@@ -50,11 +51,11 @@ func TestPerformRunAction(t *testing.T) {
 		if err := r.PerformRunAction(ctx, i, tt.in); (err == nil) == tt.wantErr {
 			t.Errorf("got %v\nwantErr %v", err, tt.wantErr)
 		}
-		if got := os.Getenv("GHDAG_ACTION_RUN_STDOUT"); got != tt.wantStdout {
+		if got := os.Getenv("GHDAG_ACTION_RUN_STDOUT"); !strings.Contains(got, tt.wantStdout) {
 			t.Errorf("got %v\nwant %v", got, tt.wantStdout)
 		}
-		if got := os.Getenv("GHDAG_ACTION_RUN_STDERR"); got != tt.wantStderr {
-			t.Errorf("got %v\nwant %v", got, tt.wantStdout)
+		if got := os.Getenv("GHDAG_ACTION_RUN_STDERR"); !strings.Contains(got, tt.wantStderr) {
+			t.Errorf("got %v\nwant %v", got, tt.wantStderr)
 		}
 	}
 }
@@ -494,6 +495,73 @@ func TestSetReviewersAndNotify(t *testing.T) {
 		r.initSeed()
 		if err := r.PerformNotifyAction(ctx, i, "Hello"); err != nil {
 			t.Errorf("got %v", err)
+		}
+	}
+}
+
+func TestPerformRunActionRetry(t *testing.T) {
+	r, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	d := t.TempDir()
+
+	tests := []struct {
+		max     string
+		timeout string
+		minmax  string
+		want    string
+	}{
+		{"", "", "", "run\n"},
+		{"2", "", "", "run\nrun\nrun\n"},
+		{"3", "0.01sec", "", "run\n"},
+		{"", "0.01sec", "", "run\n"},
+		{"", "0.25sec", "0.5sec", "run\n"},
+	}
+	for idx, tt := range tests {
+		if err := r.revertEnv(); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		i := &target.Target{}
+		if err := faker.FakeData(i); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_RETRY_MAX", tt.max); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_RETRY_TIMEOUT", tt.timeout); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_RETRY_MIN_INTERVAL", tt.minmax); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Setenv("GHDAG_ACTION_RUN_RETRY_MAX_INTERVAL", tt.minmax); err != nil {
+			t.Fatal(err)
+		}
+
+		p := filepath.Join(d, fmt.Sprintf("%d_TestPerformRunActionRetry.txt", idx))
+		command := fmt.Sprintf("perl -MTime::HiRes=sleep -e sleep -e 0.1 && echo 'run' >> %s && exit 1", p)
+		if err := r.PerformRunAction(ctx, i, command); err == nil {
+			t.Errorf("got %v want error", err)
+		}
+		if _, err := os.Stat(p); err != nil {
+			// command canceled
+			continue
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := string(b)
+		if got != tt.want {
+			t.Errorf("%#v:\ngot %v\nwant %v", tt, got, tt.want)
 		}
 	}
 }
