@@ -238,8 +238,8 @@ A task has 3 actions ( called `do`, `ok` and `ng` ) with predetermined steps to 
 | --- | --- |
 | `GHDAG_TASK_ID` | Task ID |
 | `GHDAG_CALLER_TASK_ID` | Task ID of the caller via the `next:` action |
-| `GHDAG_ACTION_RUN_STDOUT` | STDOUT of the `run` action |
-| `GHDAG_ACTION_RUN_STDERR` | STDERR of the `run` action |
+| `GHDAG_ACTION_RUN_STDOUT` | Latest STDOUT of the `run` action |
+| `GHDAG_ACTION_RUN_STDERR` | Latest STDERR of the `run` action |
 | `GHDAG_ACTION_LABELS_UPDATED` | Update result of the `labels:` action |
 | `GHDAG_ACTION_ASSIGNEES_UPDATED` | Update result of the `assgnees:` action |
 | `GHDAG_ACTION_REVIEWERS_UPDATED` | Update result of the `reviewers:` action |
@@ -400,6 +400,11 @@ tasks:
 | `GHDAG_ACTION_LABELS_BEHAVIOR` | Behavior of the `labels:` action ( `replace` (=default), `add`, `remove` ) | - |
 | `GHDAG_ACTION_ASSIGNEES_BEHAVIOR` | Behavior of the `assignees:` action ( `replace` (=default), `add`, `remove` ) | - |
 | `GHDAG_ACTION_COMMENT_MAX` | Maximum number of consecutive comments by the same login ( default: 5 ) | - |
+| `GHDAG_ACTION_RUN_RETRY_MAX` | Maximum number of retries for the `run:` action ( default: none ) | - |
+| `GHDAG_ACTION_RUN_RETRY_MIN_INTERVAL` | Minimum retry interval for the `run:` action ( default: 0 ) | - |
+| `GHDAG_ACTION_RUN_RETRY_MAX_INTERVAL` | Maximum retry interval for the `run:` action ( default: 0 ) | - |
+| `GHDAG_ACTION_RUN_RETRY_JITTER_FACTOR` | Jitter factor of retries for the `run:` action ( default: 0.05 ) | - |
+| `GHDAG_ACTION_RUN_RETRY_TIMEOUT` | Timeout for all retries execution time for the `run:` action ( default: 300 sec ) | - |
 
 #### Required scope of `SLACK_API_TOKEN`
 
