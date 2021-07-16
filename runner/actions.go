@@ -26,7 +26,7 @@ func (r *Runner) PerformRunAction(ctx context.Context, _ *target.Target, command
 	max := 0
 	timeout := 300 * time.Second
 	p := backoff.Null()
-	if os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX") != "" || os.Getenv("GHDAG_ACTION_RUN_RETRY_TIMEOUT") != "" {
+	if (os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX") != "" || os.Getenv("GHDAG_ACTION_RUN_RETRY_TIMEOUT") != "") && os.Getenv("GHDAG_ACTION_RUN_RETRY_MAX") != "0" {
 		mini := 0 * time.Second
 		maxi := 0 * time.Second
 		jf := 0.05

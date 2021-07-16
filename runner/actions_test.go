@@ -519,6 +519,8 @@ func TestPerformRunActionRetry(t *testing.T) {
 		want    string
 	}{
 		{"", "", "", "run\n"},
+		{"0", "", "", "run\n"},
+		{"0", "5min", "", "run\n"},
 		{"2", "", "", "run\nrun\nrun\n"},
 		{"3", "0.01sec", "", "run\n"},
 		{"", "0.01sec", "", "run\n"},
