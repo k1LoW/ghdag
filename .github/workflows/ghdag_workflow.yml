@@ -5,7 +5,7 @@ on:
   issue_comment:
     types: [created]
   pull_request:
-    types: [opened]
+    types: [opened, labeled]
 
 jobs:
   run-workflow:
