@@ -24,6 +24,16 @@ builds:
     - amd64
   ldflags:
     - -s -w -X github.com/k1LoW/ghdag.version={{.Version}} -X github.com/k1LoW/ghdag.commit={{.FullCommit}} -X github.com/k1LoW/ghdag.date={{.Date}} -X github.com/k1LoW/ghdag/version.Version={{.Version}}
+-
+  id: ghdag-darwin-arm64
+  env:
+    - CGO_ENABLED=0
+  goos:
+    - darwin
+  goarch:
+    - arm64
+  ldflags:
+    - -s -w -X github.com/k1LoW/ghdag.version={{.Version}} -X github.com/k1LoW/ghdag.commit={{.FullCommit}} -X github.com/k1LoW/ghdag.date={{.Date}} -X github.com/k1LoW/ghdag/version.Version={{.Version}}    
 archives:
 -
   id: ghdag-archive
