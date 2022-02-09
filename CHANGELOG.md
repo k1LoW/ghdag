@@ -1,3 +1,7 @@
+## [v0.16.1](https://github.com/k1LoW/ghdag/compare/v0.16.0...v0.16.1) (2022-02-09)
+
+* Support darwin arm64 [#73](https://github.com/k1LoW/ghdag/pull/73) ([k1LoW](https://github.com/k1LoW))
+
 ## [v0.16.0](https://github.com/k1LoW/ghdag/compare/v0.15.2...v0.16.0) (2021-07-16)
 
 * Support retry in `run:` action [#71](https://github.com/k1LoW/ghdag/pull/71) ([k1LoW](https://github.com/k1LoW))
