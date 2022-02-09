@@ -44,6 +44,7 @@ prerelease:
 	git tag ${VER}
 
 release:
+	git push origin --tag
 	goreleaser --rm-dist
 
 .PHONY: default test
