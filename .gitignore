@@ -1,5 +1,5 @@
 /*.yml
 /ghdag
 /dist/
-coverage.txt
+coverage.out
 .go-version
