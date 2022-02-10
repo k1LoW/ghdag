@@ -18,7 +18,7 @@ ci: depsdev test integration sec
 test:
 	mockgen -source gh/gh.go -destination mock/mock_gh.go -package mock
 	mockgen -source slk/slk.go -destination mock/mock_slk.go -package mock
-	go test ./... -coverprofile=coverage.txt -covermode=count
+	go test ./... -coverprofile=coverage.out -covermode=count
 
 integration: build
 	./ghdag run testdata/test_workflow.yml
