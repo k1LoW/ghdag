@@ -26,7 +26,7 @@ require (
 require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
