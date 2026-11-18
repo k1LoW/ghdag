@@ -295,7 +295,7 @@ func (c *Client) FetchTarget(ctx context.Context, n int) (*target.Target, error)
 	variables := map[string]interface{}{
 		"owner":  githubv4.String(c.owner),
 		"repo":   githubv4.String(c.repo),
-		"number": githubv4.Int(n),
+		"number": githubv4.Int(n), // #nosec G115 -- issue and pull request numbers never approach the int32 limit
 		"limit":  githubv4.Int(limit),
 	}
 
