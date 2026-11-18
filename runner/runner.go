@@ -423,8 +423,9 @@ func (r *Runner) sample(in []string, envKey string) ([]string, error) {
 	}
 
 	if len(in) > sn {
-		rand.Seed(r.seed)
-		rand.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
+		// The global rand.Seed is a no-op once the go directive reaches 1.24, so use a dedicated source to keep the same seed reproducible.
+		rnd := rand.New(rand.NewSource(r.seed)) // #nosec G404 -- sampling targets is not security sensitive
+		rnd.Shuffle(len(in), func(i, j int) { in[i], in[j] = in[j], in[i] })
 		in = in[:sn]
 	}
 	return in, nil
